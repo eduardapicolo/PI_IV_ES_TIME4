@@ -8,46 +8,49 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusModifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import br.com.salus.ui.theme.SalusTheme
 
 class SignUpActivity : ComponentActivity() {
@@ -56,7 +59,7 @@ class SignUpActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SalusTheme {
-                PreviewSignUp()
+                SignUpFlow()
             }
         }
     }
@@ -65,39 +68,63 @@ class SignUpActivity : ComponentActivity() {
 @Preview
 @Composable
 fun PreviewSignUp(){
-    UserDataScreen()
+    SalusTheme {
+        SignUpFlow()
+    }
 }
 
-/*
 @Composable
 fun SignUpFlow(){
     val navController = rememberNavController()
-    SalusTheme {
-        NavHost(navController = navController, startDestination = "userData") {
 
-            composable("userData") { UserDataScreen(navController) }
+    NavHost(navController = navController, startDestination = "userData") {
 
+        composable("userData") { UserDataScreen(navController) }
 
+        composable(
+            route = "userProfile/{name}/{email}/{password}",
+            arguments = listOf(
+                navArgument("name") { type = NavType.StringType },
+                navArgument("email") { type = NavType.StringType },
+                navArgument("password") { type = NavType.StringType }
+            )
+        ) { entry ->
+            val name = entry.arguments?.getString("name") ?: ""
+            val email = entry.arguments?.getString("email") ?: ""
+            val password = entry.arguments?.getString("password") ?: ""
+
+            UserProfileScreen(navController, name, email, password)
         }
     }
 }
-*/
 
 @Composable
-fun UserDataScreen(/*navController: NavController*/) {
+fun UserDataScreen(navController: NavController) {
     val activity = LocalContext.current as? Activity
 
-    var nome by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var senha by remember { mutableStateOf("") }
-    var confirmarSenha by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmedPassword by remember { mutableStateOf("") }
 
-    var senhaVisivel by remember { mutableStateOf(false) }
-    var confirmarSenhaVisivel by remember { mutableStateOf(false) }
+    val hasMinLength by remember { derivedStateOf { password.length >= 8 } }
+    val hasLowercase by remember { derivedStateOf { password.any { it.isLowerCase() } } }
+    val hasUppercase by remember { derivedStateOf { password.any { it.isUpperCase() } } }
+    val hasNumber by remember { derivedStateOf { password.any { it.isDigit() } } }
+    val hasSpecialCharacter by remember { derivedStateOf { password.any { it in "!@#$%" } } }
+
+    val isFormValid by remember {
+        derivedStateOf {
+            name.isNotBlank() &&
+            isEmailValid(email) &&
+            hasMinLength && hasLowercase && hasUppercase && hasNumber && hasSpecialCharacter &&
+            password == confirmedPassword
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color.White/*MaterialTheme.colorScheme.background*/
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier
@@ -151,116 +178,31 @@ fun UserDataScreen(/*navController: NavController*/) {
                     .fillMaxWidth()
                     .padding(horizontal = 32.dp),
             ) {
-                TextField(
-                    value = nome,
-                    onValueChange = { nome = it },
-                    label = {
-                        Text(
-                            text = "Nome",
-                            fontSize = 12.sp,
-                            /*fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,*/
-                            /*color = MaterialTheme.colorScheme.onSurface*/
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Black,
-                        unfocusedIndicatorColor = Color.Black.copy(alpha = 0.5f),
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        cursorColor = Color.Black
-                    )
-                )
+                InputBox(name, { newName -> name = newName}, "Nome")
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                TextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = {
-                        Text(
-                            text = "E-mail",
-                            fontSize = 12.sp,
-                            /*fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,*/
-                            /*color = MaterialTheme.colorScheme.onSurface*/
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Black,
-                        unfocusedIndicatorColor = Color.Black.copy(alpha = 0.5f),
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        cursorColor = Color.Black
-                    )
-                )
+                InputBox(email, { newEmail -> email = newEmail}, "E-mail")
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                TextField(
-                    value = senha,
-                    onValueChange = { senha = it },
-                    label = {
-                        Text(
-                            text = "Senha",
-                            fontSize = 12.sp,
-                            /*fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,*/
-                            /*color = MaterialTheme.colorScheme.onSurface*/
-                        )
-                    },
-                    visualTransformation = if (senhaVisivel) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Black,
-                        unfocusedIndicatorColor = Color.Black.copy(alpha = 0.5f),
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        cursorColor = Color.Black
-                    ),
-                    trailingIcon = {
-                        val image = if (senhaVisivel) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                        IconButton(onClick = { senhaVisivel = !senhaVisivel }) {
-                            Icon(imageVector = image, contentDescription = "Mostrar senha")
-                        }
+                PasswordInputBox(password, { newPassword -> password = newPassword}, "Senha")
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (password != "") {
+                    Column(modifier = Modifier.padding(start = 4.dp)) {
+                        PasswordRequirement("Mínimo de 8 caracteres", hasMinLength)
+                        PasswordRequirement("1 letra minúscula (a-z)", hasLowercase)
+                        PasswordRequirement("1 letra maiúscula (A-Z)", hasUppercase)
+                        PasswordRequirement("1 número (0-9)", hasNumber)
+                        PasswordRequirement("1 caractere especial (!@#$%)", hasSpecialCharacter)
                     }
-                )
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                TextField(
-                    value = confirmarSenha,
-                    onValueChange = { confirmarSenha = it },
-                    label = {
-                        Text(
-                            text = "Confirme sua senha",
-                            fontSize = 12.sp,
-                            /*fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,*/
-                            /*color = MaterialTheme.colorScheme.onSurface*/
-                        )
-                    },
-                    visualTransformation = if (confirmarSenhaVisivel) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Black,
-                        unfocusedIndicatorColor = Color.Black.copy(alpha = 0.5f),
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        cursorColor = Color.Black
-                    ),
-                    trailingIcon = {
-                        val image = if (confirmarSenhaVisivel) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                        IconButton(onClick = { confirmarSenhaVisivel = !confirmarSenhaVisivel }) {
-                            Icon(imageVector = image, contentDescription = "Mostrar senha")
-                        }
-                    }
-                )
+                PasswordInputBox(confirmedPassword, { newConfirmedPassword -> confirmedPassword = newConfirmedPassword}, "Confirmar senha")
             }
 
             Spacer(Modifier.weight(1f))
@@ -276,11 +218,16 @@ fun UserDataScreen(/*navController: NavController*/) {
             )
 
             Button(
-                onClick = {/* TODO: Lógica de ir para próxima página.*/},
+                onClick = { navController.navigate("userProfile/$name/$email/$password") },
+                enabled = isFormValid,
                 shape = RoundedCornerShape(50),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 30.dp)
+                    .padding(horizontal = 32.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Text(
                     text = "Continuar",
@@ -289,12 +236,152 @@ fun UserDataScreen(/*navController: NavController*/) {
                 )
             }
 
-            Spacer(Modifier.height(80.dp))
+            Spacer(Modifier.height(32.dp))
         }
     }
 }
 
 @Composable
-fun UserProfileScreen(navController: NavController /*, RESTO DAS INFOS DO USUÁRIO */) {
+fun UserProfileScreen(navController: NavController, name: String, email: String, password: String) {
+    var profilePicture by remember { mutableIntStateOf(1) }
+    var username by remember { mutableStateOf(name) }
 
+    var showDialog by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        ProfilePictureDialog(
+            onDismiss = {showDialog = false},
+            onPictureSelected = { id ->
+                profilePicture = id
+                showDialog = false
+            }
+        )
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+            ) {
+                IconButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        modifier = Modifier.size(36.dp),
+                        contentDescription = "Voltar"
+                    )
+                }
+
+                Image(
+                    painter = painterResource(R.drawable.salus_green),
+                    modifier = Modifier
+                        .size(140.dp)
+                        .align(Alignment.Center),
+                    contentScale = ContentScale.Crop,
+                    contentDescription = "Logo Salus"
+                )
+            }
+
+            Text(
+                text = "Personalize seu\nperfil",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 32.dp, top = 24.dp),
+                textAlign = TextAlign.Start
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Escolha como você aparecerá para seus amigos",
+                fontSize = 12.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp),
+                textAlign = TextAlign.Start
+            )
+
+            Spacer(modifier = Modifier.height(64.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(180.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .clickable { showDialog = true },
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = getProfilePictureResourceId(profilePicture)),
+                    contentDescription = "Foto de perfil",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.3f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Editar foto de perfil",
+                        modifier = Modifier.size(80.dp),
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+            ) {
+                InputBox(username, { newUsername -> username = newUsername}, "Seu apelido")
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Button(
+                onClick = { /*TODO: SALVAR AS INFOS DO USUARIO NO BANCO*/ },
+                enabled = username.isNotBlank(),
+                shape = RoundedCornerShape(50),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(
+                    text = "Concluir",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
 }

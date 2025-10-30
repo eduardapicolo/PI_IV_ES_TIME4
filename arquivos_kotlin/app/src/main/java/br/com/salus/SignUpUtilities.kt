@@ -156,13 +156,16 @@ fun getProfilePictureResourceId(id: Int): Int {
         4 -> R.drawable.profile_picture_4
         5 -> R.drawable.profile_picture_5
         6 -> R.drawable.profile_picture_6
+        7 -> R.drawable.profile_picture_7
+        8 -> R.drawable.profile_picture_8
+        9 -> R.drawable.profile_picture_9
         else -> R.drawable.profile_picture_1
     }
 }
 
 @Composable
 fun ProfilePictureDialog(onDismiss: () -> Unit, onPictureSelected: (Int) -> Unit) {
-    val pictureIds = (1..6).toList()
+    val pictureIds = (1..9).toList()
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(

@@ -58,4 +58,13 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("androidx.compose.ui:ui-text-google-fonts:1.6.8") //para as fontes da google
     implementation("androidx.compose.material:material-icons-extended") // Ou "androidx.compose.material:material-icons-extended:versao_atual" se precisar
+
+    // Para Navegação
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+
+    //para o video de inicio
+    val media3Version = "1.3.1"
+    implementation("androidx.media3:media3-exoplayer:$media3Version")
+    implementation("androidx.media3:media3-ui:$media3Version")
+    implementation("androidx.media3:media3-common:$media3Version")
 }

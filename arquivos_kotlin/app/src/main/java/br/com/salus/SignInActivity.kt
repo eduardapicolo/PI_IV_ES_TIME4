@@ -43,7 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.salus.ui.theme.SalusTheme // Assumindo que este é o pacote do tema
+import br.com.salus.ui.theme.SalusTheme
 
 class SignInActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,105 +74,121 @@ fun SignInScreen() {
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
                 .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+            contentAlignment = Alignment.TopCenter
         ) {
-            Box(
+
+            IconButton(
+                onClick = { activity?.finish() },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
+                    .align(Alignment.TopStart)
+                    .padding(start = 8.dp, top = 8.dp)
             ) {
-                // Ícone de voltar no canto superior esquerdo
-                IconButton(
-                    onClick = { activity?.finish() }, // Fechar a activity
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        modifier = Modifier.size(36.dp),
-                        contentDescription = "Voltar"
-                    )
-                }
-
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    modifier = Modifier.size(36.dp),
+                    contentDescription = "Voltar"
+                )
             }
-
-            Text(
-                text = "Bem vindo(a) de volta!",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 32.dp, bottom = 64.dp),
-                textAlign = TextAlign.Center
-            )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
+                    .padding(top = 80.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                InputBox(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = "E-mail",
-                    keyboardType = KeyboardType.Email
-                )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Box(
+                    modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.salus_green),
+                        modifier = Modifier
+                            .size(300.dp),
+                        contentScale = ContentScale.Crop,
+                        contentDescription = "Logo Salus"
+                    )
 
-                // Campo Senha
-                PasswordInputBox(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = "Senha"
-                )
+                    Text(
+                        text = "Bem vindo(a) de volta!",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = (-20).dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Link 'Esqueci minha senha'
-                Text(
-                    text = "Esqueci minha senha",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 14.sp,
+                Column(
                     modifier = Modifier
-                        .align(Alignment.End)
-                        .clickable { /* TODO: Navegar para a tela de recuperação de senha */ }
-                )
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp)
+                        .padding(top = 32.dp),
+                ) {
+                    InputBox(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = "E-mail",
+                        keyboardType = KeyboardType.Email
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    PasswordInputBox(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = "Senha"
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Esqueci minha senha",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .clickable { /* Navegar para a tela de recuperação de senha */ }
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Button(
+                        onClick = { /* Lógica de Login */ },
+                        enabled = isFormValid,
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            disabledContainerColor = Color(0xFFC7DAC1),
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Text(
+                            text = "Entrar",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Spacer(Modifier.height(32.dp))
+                }
             }
-
-            Spacer(Modifier.weight(1f))
-
-            // Botão 'Entrar'
-            Button(
-                onClick = { /* TODO: Lógica de Login */ },
-                enabled = isFormValid,
-                shape = RoundedCornerShape(50),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                Text(
-                    text = "Entrar",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            Spacer(Modifier.height(32.dp))
         }
     }
 }
+
+
 
 
 @Composable
@@ -190,12 +206,11 @@ fun InputBox(
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
         colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-            errorContainerColor = Color.Transparent,
-            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-            unfocusedIndicatorColor = Color.LightGray,
+            cursorColor = MaterialTheme.colorScheme.primary
         )
     )
 }
@@ -222,23 +237,22 @@ fun PasswordInputBox(
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         modifier = Modifier.fillMaxWidth(),
         colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-            errorContainerColor = Color.Transparent,
-            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-            unfocusedIndicatorColor = Color.LightGray,
+            cursorColor = MaterialTheme.colorScheme.primary
         ),
         trailingIcon = {
             IconButton(onClick = { passwordVisibility = !passwordVisibility }) {
-                Icon(imageVector = icon, contentDescription = "Toggle password visibility")
+                Icon(imageVector = icon, contentDescription = "Mostar senha")
             }
         }
     )
 }
 
 
-@Preview(showBackground = true)
+@Preview
 @Composable
 fun PreviewSignInScreen() {
     SalusTheme {

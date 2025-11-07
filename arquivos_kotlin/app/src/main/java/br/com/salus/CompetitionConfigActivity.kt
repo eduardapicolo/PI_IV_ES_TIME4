@@ -99,6 +99,7 @@ fun CompetitionConfigScreen(
                         fontWeight = FontWeight.Bold
                     )
                 },
+                //TODO Botao de voltar
                 navigationIcon = {
                     IconButton(onClick = onBackClicked) {
                         Icon(

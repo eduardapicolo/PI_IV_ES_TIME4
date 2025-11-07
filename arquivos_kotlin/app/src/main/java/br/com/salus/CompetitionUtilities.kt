@@ -47,7 +47,7 @@ fun CompetitionIconDialog(onDismiss: () -> Unit, onPictureSelected: (Int) -> Uni
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Escolha sua foto",
+                    text = "Escolha seu icone",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -60,7 +60,7 @@ fun CompetitionIconDialog(onDismiss: () -> Unit, onPictureSelected: (Int) -> Uni
                     items(pictureIds) { id ->
                         Image(
                             painter = painterResource(id = getCompetitionIconResourceId(id)),
-                            contentDescription = "Foto de perfil ${id}",
+                            contentDescription = "Icone de competição ${id}",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .size(80.dp)

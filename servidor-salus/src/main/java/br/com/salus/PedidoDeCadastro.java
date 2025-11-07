@@ -1,5 +1,7 @@
 package br.com.salus;
 
+import java.util.Date;
+
 public class PedidoDeCadastro extends Comunicado
 {
     private static final long serialVersionUID = 2L;
@@ -9,12 +11,15 @@ public class PedidoDeCadastro extends Comunicado
     private String senha;
     private String apelido;
     private Integer idFotoPerfil;
+    private Date dataHoraCriacao;
+
     public PedidoDeCadastro(
             String nome,
             String email,
             String senha,
             String apelido,
-            Integer idFotoPerfil
+            Integer idFotoPerfil,
+            Date dataHoraCriacao
     ) throws Exception
     {
         if (nome == null) { throw new Exception ("Nome ausente"); }
@@ -36,6 +41,10 @@ public class PedidoDeCadastro extends Comunicado
         if (idFotoPerfil == null) { throw new Exception ("Foto de perfil ausente"); }
 
         this.idFotoPerfil = idFotoPerfil;
+
+        if (dataHoraCriacao == null) { throw new Exception ("Data e hora de criação ausente"); }
+
+        this.dataHoraCriacao = dataHoraCriacao;
     }
 
     public String getNome (){
@@ -58,10 +67,10 @@ public class PedidoDeCadastro extends Comunicado
         return this.idFotoPerfil;
     }
 
+    public Date getDataHoraCriacao (){ return this.dataHoraCriacao; }
+
     @Override
     public String toString (){
-        return "br.com.gabriel.testecliente.PedidoDeCadastro [e-mail: " + this.email + "\nnome: " + this.nome;
+        return "br.com.salus.PedidoDeCadastro [e-mail: " + this.email + "\nnome: " + this.nome + "]";
     }
-
-
 }

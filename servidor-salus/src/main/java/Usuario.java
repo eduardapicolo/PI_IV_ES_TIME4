@@ -1,5 +1,4 @@
-import br.com.salus.PedidoDeCadastro;
-import br.com.salus.Resposta;
+import br.com.salus.*;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
@@ -14,15 +13,30 @@ public class Usuario {
         this.colecaoUsuarios = db.getCollection("Users");
     }
 
-    public Resposta cadastrarUsuario (PedidoDeCadastro pedido) {
-
+    public Resposta buscarEmail (PedidoBuscaEmail pedido) {
         try {
             Document emailExistente = this.colecaoUsuarios.find(
-                    Filters.eq("email",pedido.getEmail())
+                    Filters.eq("email", pedido.getEmail())
             ).first();
 
             if (emailExistente != null) {
-                return new Resposta(false,"e-mail ja existente");
+                return new Resposta(true, "Email encontrado");
+            }
+
+            return new Resposta(false, "Nenhum email encontrado");
+        } catch (Exception e) {
+            return new Resposta(false, "Erro interno no servido: " + e.getMessage());
+        }
+    }
+
+    public Resposta cadastrarUsuario (PedidoDeCadastro pedido) {
+
+        try {
+            PedidoBuscaEmail pedidoBuscaEmail = new PedidoBuscaEmail(pedido.getEmail());
+            Resposta emailExistente = buscarEmail(pedidoBuscaEmail);
+
+            if (emailExistente.getSucesso()) {
+                return new Resposta(false,"E-mail ja existente");
             }
 
             Document apelidoExistente = this.colecaoUsuarios.find(
@@ -30,14 +44,15 @@ public class Usuario {
             ).first();
 
             if (apelidoExistente != null) {
-                return new Resposta(false,"apelido ja esta sendo utilizado por outro usuario");
+                return new Resposta(false,"Apelido ja existente");
             }
 
             Document documentoUsuario = new Document("nome",pedido.getNome())
                     .append("email",pedido.getEmail())
                     .append("senha",pedido.getSenha())
                     .append("apelido",pedido.getApelido())
-                    .append("idFoto",pedido.getIdFotoPerfil());
+                    .append("idFoto",pedido.getIdFotoPerfil())
+                    .append("dataCadastro", pedido.getDataHoraCriacao());
 
             InsertOneResult result = this.colecaoUsuarios.insertOne(documentoUsuario);
 
@@ -46,8 +61,24 @@ public class Usuario {
         } catch (Exception e) {
             return new Resposta(false,"erro no interno no servidor " + e.getMessage() );
         }
-
     }
 
+    public Resposta loginUsuario (PedidoDeLogin pedido) {
+        try {
+            Document usuarioExistente = this.colecaoUsuarios.find(
+                    Filters.and(
+                        Filters.eq("email", pedido.getEmail()),
+                        Filters.eq("senha", pedido.getSenha())
+                    )
+            ).first();
 
+            if (usuarioExistente != null) {
+                return new Resposta(true,"Login bem sucedido.");
+            }
+
+            return new Resposta(false,"E-mail ou senha incorreto.");
+        } catch (Exception e) {
+            return new Resposta(false,"Erro interno no servidor " + e.getMessage());
+        }
+    }
 }

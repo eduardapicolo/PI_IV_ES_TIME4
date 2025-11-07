@@ -1,7 +1,4 @@
-import br.com.salus.Comunicado;
-import br.com.salus.PedidoDeCadastro;
-import br.com.salus.PedidoParaSair;
-import br.com.salus.Resposta;
+import br.com.salus.*;
 
 import java.io.*;
 import java.net.*;
@@ -12,9 +9,10 @@ public class SupervisoraDeConexao extends Thread
     private Parceiro            parceiro;
     private Socket              conexao;
     private ArrayList<Parceiro> usuarios;
-    private Usuario       usuarioDAO;
+    private Usuario             usuarioDAO;
+    private Habito              habitoDAO;
 
-    public SupervisoraDeConexao (Socket conexao, ArrayList<Parceiro> usuarios, Usuario usuarioDAO) throws Exception
+    public SupervisoraDeConexao (Socket conexao, ArrayList<Parceiro> usuarios, Usuario usuarioDAO, Habito habitoDAO) throws Exception
     {
         if (conexao==null)
             throw new Exception ("Conexao ausente");
@@ -25,43 +23,25 @@ public class SupervisoraDeConexao extends Thread
         this.conexao  = conexao;
         this.usuarios = usuarios;
         this.usuarioDAO = usuarioDAO;
+        this.habitoDAO = habitoDAO;
     }
 
     public void run ()
     {
         ObjectOutputStream transmissor;
+        ObjectInputStream receptor;
+
         try
         {
             transmissor = new ObjectOutputStream(this.conexao.getOutputStream());
-        }
-        catch (Exception erro)
-        {
-            return;
-        }
-
-        ObjectInputStream receptor=null;
-        try
-        {
             receptor = new ObjectInputStream(this.conexao.getInputStream());
-        }
-        catch (Exception err0)
-        {
-            try
-            {
-                transmissor.close();
-            }
-            catch (Exception falha)
-            {} // so tentando fechar antes de acabar a thread
-
-            return;
-        }
-
-        try
-        {
-            this.parceiro = new Parceiro (this.conexao,receptor,transmissor);
+            this.parceiro = new Parceiro (this.conexao, receptor, transmissor);
         }
         catch (Exception erro)
-        {} // sei que passei os parametros corretos
+        {
+            System.err.println("Erro ao criar streams: " + erro.getMessage());
+            return;
+        }
 
         try
         {
@@ -69,43 +49,77 @@ public class SupervisoraDeConexao extends Thread
             {
                 this.usuarios.add (this.parceiro);
             }
+        }
+        catch (Exception e)
+        {
+            return;
+        }
 
+        System.out.println("Novo cliente conectado.");
 
-            for(;;)
+        for(;;)
+        {
+            try
             {
                 Comunicado comunicado = this.parceiro.envie();
 
                 if (comunicado==null) {
-                    return;
+                    break;
+                }
+                else if (comunicado instanceof PedidoBuscaEmail)
+                {
+                    PedidoBuscaEmail pedido = (PedidoBuscaEmail) comunicado;
+                    Resposta resposta = this.usuarioDAO.buscarEmail(pedido);
+                    this.parceiro.receba(resposta);
                 }
                 else if (comunicado instanceof PedidoDeCadastro)
                 {
                     PedidoDeCadastro pedido = (PedidoDeCadastro) comunicado;
                     Resposta resposta = this.usuarioDAO.cadastrarUsuario(pedido);
                     this.parceiro.receba(resposta);
-
+                }
+                else if (comunicado instanceof PedidoDeLogin)
+                {
+                    PedidoDeLogin pedido = (PedidoDeLogin) comunicado;
+                    Resposta resposta = this.usuarioDAO.loginUsuario(pedido);
+                    this.parceiro.receba(resposta);
+                }
+                else if (comunicado instanceof PedidoDeNovoHabito)
+                {
+                    PedidoDeNovoHabito pedido = (PedidoDeNovoHabito) comunicado;
+                    Resposta resposta = this.habitoDAO.cadastrarHabito(pedido);
+                    this.parceiro.receba(resposta);
                 }
                 else if (comunicado instanceof PedidoParaSair)
                 {
-                    synchronized (this.usuarios)
-                    {
-                        this.usuarios.remove (this.parceiro);
-                    }
-                    this.parceiro.adeus();
+                    break;
                 }
             }
-        }
-        catch (Exception erro)
-        {
-            try
+            catch (Exception erro)
             {
-                transmissor.close ();
-                receptor   .close ();
-            }
-            catch (Exception falha)
-            {} // so tentando fechar antes de acabar a thread
+                System.err.println("Erro ao processar pedido: " + erro.getMessage());
+                erro.printStackTrace();
 
-            return;
+
+                try {
+                    this.parceiro.receba(new Resposta(false, "Erro fatal no servidor ao processar pedido: " + erro.getMessage()));
+                } catch (Exception e) {
+
+                }
+
+                break;
+            }
         }
+
+        synchronized (this.usuarios)
+        {
+            this.usuarios.remove (this.parceiro);
+        }
+
+        try {
+            this.parceiro.adeus();
+        } catch (Exception e) {}
+
+        System.out.println("Cliente desconectado.");
     }
 }

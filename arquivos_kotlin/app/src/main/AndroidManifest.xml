@@ -32,6 +32,11 @@
             android:exported="false"
             android:label="Tela Inicial"
             android:theme="@style/Theme.Salus"></activity>
+        <activity
+            android:name=".CompetitionConfigActivity"
+            android:exported="false"
+            android:label="Conffigurações de Competição"
+            android:theme="@style/Theme.Salus"></activity>
     </application>
 
 </manifest>

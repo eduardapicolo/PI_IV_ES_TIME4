@@ -3,8 +3,11 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -23,6 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import br.com.salus.ui.theme.SalusTheme
 
 
+//TODO resolver bug do video
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,7 +43,6 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         startDestination = "splash" // A rota inicial é a nossa tela de vídeo
                     ) {
-                        // Rota para a tela de Splash com vídeo
                         composable("splash") {
                             SplashScreenVideo(
                                 onVideoEnded = {
@@ -51,7 +54,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Rota para a tela principal
                         composable("home") {
                             HomeScreen()
                         }
@@ -69,16 +71,19 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun HomeScreen() {
     val context = LocalContext.current
-    Box(
+    Column(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Text(text = "Bem-vindo à Tela Principal!")
+
+        Spacer(modifier = Modifier.height(32.dp))
+
         Button(
-            // AQUI ESTÁ A CORREÇÃO:
             onClick = {
                 val intent = Intent(context, InicialScreenActivity::class.java)
-                context.startActivity(intent) // <-- Você esqueceu esta linha
+                context.startActivity(intent)
             },
             modifier = Modifier.width(280.dp),
             colors = ButtonDefaults.buttonColors(
@@ -87,6 +92,25 @@ fun HomeScreen() {
         ) {
             Text(
                 text = "Tela inicial",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Button(
+            onClick = {
+                val intent = Intent(context, CompetitionConfigActivity::class.java)
+                context.startActivity(intent)
+            },
+            modifier = Modifier.width(280.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.onPrimary
+            )
+        ) {
+            Text(
+                text = "Configuracoes competicao",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )

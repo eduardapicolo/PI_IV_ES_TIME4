@@ -1,6 +1,7 @@
 package br.com.salus
 
 import android.util.Log
+import java.util.Date
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.net.Socket
@@ -77,27 +78,57 @@ class ClienteSocket(private val host: String, private val porta: Int) {
     }
 }
 
-fun userSignUp() {
-
-    val HOST = "10.0.2.2"
-
+fun searchForEmail(email: String) {
+    val HOST = "localhost"
     val PORTA = 3000
-
     val cliente = ClienteSocket(HOST, PORTA)
 
     try {
         cliente.conectar()
-        //Todo
+        val pedido = PedidoBuscaEmail(email)
+
+        cliente.enviar(pedido)
+        val resposta = cliente.receber()
+
+        if (resposta is Resposta) {
+            if (!resposta.sucesso) {
+                Log.d("teste Server", resposta.mensagem)
+            } else {
+                Log.d("teste Server", resposta.mensagem)
+            }
+        }
+    } catch (e: Exception) {
+        Log.e("NetworkTest", "Ocorreu um erro geral:", e)
+
+    } finally {
+        Log.d("NetworkTest", "Bloco finally executado, desconectando.")
+        cliente.desconectar()
+    }
+}
+
+fun userSignUp(
+    nome: String,
+    email: String,
+    senha: String,
+    apelido: String,
+    idFotoPerfil: Int
+) {
+    val HOST = "localhost"
+    val PORTA = 3000
+    val cliente = ClienteSocket(HOST, PORTA)
+
+    try {
+        cliente.conectar()
         val pedido = PedidoDeCadastro(
-            nome = "DUDUZINHO ",
-            email = "DUDS@email.com",
-            senha = "senhaSuperSecreta123",
-            apelido = "EDUFGOMES",
-            idFotoPerfil = 1
+            nome = nome,
+            email = email,
+            senha = senha,
+            apelido = apelido,
+            idFotoPerfil = idFotoPerfil,
+            dataHoraCriacao = Date()
         )
 
         cliente.enviar(pedido)
-
         val resposta = cliente.receber()
 
         if (resposta is Resposta) {
@@ -105,6 +136,72 @@ fun userSignUp() {
                 Log.d("teste Server", "Usuario cadastrado com sucesso")
             } else {
                 Log.d("teste Server", "Falha ao cadastrar um novo usuario: " + resposta.mensagem)
+            }
+        } else {
+            println("Resposta inesperada recebida: $resposta")
+        }
+
+    } catch (e: Exception) {
+        Log.e("NetworkTest", "Ocorreu um erro geral:", e)
+
+    } finally {
+        Log.d("NetworkTest", "Bloco finally executado, desconectando.")
+        cliente.desconectar()
+    }
+}
+
+fun userSignIn(email: String, senha: String) {
+    val HOST = "localhost"
+    val PORTA = 3000
+    val cliente = ClienteSocket(HOST, PORTA)
+
+    try {
+        cliente.conectar()
+        val pedido = PedidoDeLogin(email, senha)
+
+        cliente.enviar(pedido)
+        val resposta = cliente.receber()
+
+        if (resposta is Resposta) {
+            if (resposta.sucesso) {
+                Log.d("teste Server", "Usuario logado com sucesso")
+            } else {
+                Log.d("teste Server", "Falha ao logar: " + resposta.mensagem)
+            }
+        } else {
+            println("Resposta inesperada recebida: $resposta")
+        }
+    } catch (e: Exception) {
+        Log.e("NetworkTest", "Ocorreu um erro geral:", e)
+
+    } finally {
+        Log.d("NetworkTest", "Bloco finally executado, desconectando.")
+        cliente.desconectar()
+    }
+}
+
+fun newHabit(nome: String, userId: String) {
+    val HOST = "localhost"
+    val PORTA = 3000
+    val cliente = ClienteSocket(HOST, PORTA)
+
+    try {
+        cliente.conectar()
+        val pedido = PedidoDeNovoHabito(
+            nome = nome,
+            sequenciaCheckin = 0,
+            ultimoCheckin = null,
+            userId = userId
+        )
+
+        cliente.enviar(pedido)
+        val resposta = cliente.receber()
+
+        if (resposta is Resposta) {
+            if (resposta.sucesso) {
+                Log.d("teste Server", "Habito criado com sucesso")
+            } else {
+                Log.d("teste Server", "Falha ao criar um novo habito: " + resposta.mensagem)
             }
         } else {
             println("Resposta inesperada recebida: $resposta")

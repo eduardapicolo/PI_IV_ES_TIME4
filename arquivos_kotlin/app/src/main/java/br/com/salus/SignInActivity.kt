@@ -44,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.salus.ui.theme.SalusTheme
+import android.content.Intent
 
 class SignInActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,6 +61,7 @@ class SignInActivity : ComponentActivity() {
 @Composable
 fun SignInScreen() {
     val activity = LocalContext.current as? Activity
+    val context = LocalContext.current
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -161,7 +163,10 @@ fun SignInScreen() {
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
-                        onClick = { /* Lógica de Login */ },
+                        onClick = {
+                            val intent = Intent(context, HabitsActivity::class.java)
+                            context.startActivity(intent)
+                                  },
                         enabled = isFormValid,
                         shape = RoundedCornerShape(50),
                         modifier = Modifier

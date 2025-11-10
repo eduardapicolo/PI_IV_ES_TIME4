@@ -32,13 +32,11 @@ import br.com.salus.ui.theme.SalusTheme
 sealed class Screen(val route: String, val iconVector: ImageVector, val label: String) {
     object Habits : Screen("habits", Icons.Default.Home, "Meus Hábitos")
     object Competitions : Screen("competitions", Icons.Default.Star, "Competições")
-    object Friends : Screen("friends", Icons.Default.Group, "Amigos")
 }
 
 val navItems = listOf(
     Screen.Habits,
     Screen.Competitions,
-    Screen.Friends
 )
 
 
@@ -72,7 +70,6 @@ fun HabitsScreen() {
             when (selectedScreen) {
                 Screen.Habits.route -> HabitsContent() // Conteúdo modificado
                 Screen.Competitions.route -> Text("Tela de Competições", Modifier.fillMaxSize())
-                Screen.Friends.route -> Text("Tela de Amigos", Modifier.fillMaxSize())
             }
         }
     }

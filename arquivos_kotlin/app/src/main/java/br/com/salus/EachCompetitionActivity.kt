@@ -110,14 +110,6 @@ fun EachCompetitionScreen(competition: Competition?) {
                 singleLine = true
             )
 
-            TextField(
-                value = streak,
-                onValueChange = { streak = it },
-                label = { Text("Sequência Atual") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
 
             Spacer(modifier = Modifier.weight(1f))
 

@@ -24,7 +24,7 @@ class CheckInManager(private val zoneId: ZoneId = ZoneId.systemDefault()) {
         val userData = userCheckIns.computeIfAbsent(userId) { UserCheckIn() }
 
         if (!canCheckIn(userId)) {
-            println("User $userId already checked in today.")
+            println("usuario $userId já regou seu hábito hoje.")
             return
         }
 
@@ -36,7 +36,7 @@ class CheckInManager(private val zoneId: ZoneId = ZoneId.systemDefault()) {
         }
 
         userData.lastCheckInDate = today
-        println("User $userId checked in on $today. Consecutive days: ${userData.consecutiveDays}")
+        println("Usuario $userId fez checkin $today. Dias consecultivos: ${userData.consecutiveDays}")
     }
 
     fun getConsecutiveDays(userId: String): Int {

@@ -1,5 +1,6 @@
 package br.com.salus
 
+import br.com.salus.mockCompetitionsList
 import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
@@ -37,7 +38,7 @@ class EachCompetitionActivity : ComponentActivity() {
 
         val competitionId = intent.getStringExtra(EXTRA_COMPETITION_ID)
 
-        competition = mockCompetitions.find { it.id == competitionId }
+        competition = mockCompetitionsList.find { it.id == competitionId }
 
         setContent {
             SalusTheme {
@@ -136,7 +137,7 @@ fun EachCompetitionScreenPreview() {
     SalusTheme {
         // A preview usa os dados importados
         EachCompetitionScreen(
-            competition = mockCompetitions[0] // "21 Dias de Foco"
+            competition = mockCompetitionsList[0] // "21 Dias de Foco"
         )
     }
 }

@@ -90,6 +90,18 @@ public class SupervisoraDeConexao extends Thread
                     Resposta resposta = this.habitoDAO.cadastrarHabito(pedido);
                     this.parceiro.receba(resposta);
                 }
+                else if (comunicado instanceof PedidoListaHabitos)
+                {
+                    PedidoListaHabitos pedido = (PedidoListaHabitos) comunicado;
+                    Resposta resposta = this.habitoDAO.buscarHabitos(pedido);
+                    this.parceiro.receba(resposta);
+                }
+                else if (comunicado instanceof PedidoDeCheckin)
+                {
+                    PedidoDeCheckin pedido = (PedidoDeCheckin) comunicado;
+                    Resposta resposta = this.habitoDAO.realizarCheckin(pedido);
+                    this.parceiro.receba(resposta);
+                }
                 else if (comunicado instanceof PedidoParaSair)
                 {
                     break;

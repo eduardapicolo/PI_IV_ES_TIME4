@@ -1,0 +1,218 @@
+package br.com.salus
+
+import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.SocketException
+import java.util.Date
+
+object NetworkManager {
+
+    private const val HOST = "192.168.15.68"
+    private const val PORTA = 3000
+
+    private var cliente: ClienteSocket? = null
+    private const val TAG = "NetworkManager"
+
+    fun isConectado(): Boolean {
+        return cliente?.isConectado() ?: false
+    }
+
+    private suspend fun conectar() {
+        withContext(Dispatchers.IO) {
+            if (!isConectado()){
+                try {
+                    cliente = ClienteSocket(HOST, PORTA)
+                    cliente?.conectar()
+                    Log.d(TAG, "Conectado ao servidor")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erro ao conectar ao servidor", e)
+                    cliente = null
+                    throw e
+                }
+            }
+        }
+    }
+
+    suspend fun desconectar() {
+        withContext(Dispatchers.IO) {
+            try {
+                cliente?.desconectar()
+                Log.d(TAG, "Desconectado do servidor")
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao desconectar do servidor", e)
+            } finally {
+                cliente = null
+            }
+        }
+    }
+
+    private suspend fun <T : Comunicado> enviarRequisicao(pedido: T): Comunicado {
+        return withContext(Dispatchers.IO) {
+            if (!isConectado()) {
+                Log.e(TAG, "Requisição falhou: Não conectado.")
+                return@withContext Resposta(false, "Sem conexão com o servidor.")
+            }
+
+            try {
+                Log.d(TAG, "Enviando pedido: ${pedido::class.simpleName}")
+                cliente!!.enviar(pedido)
+                Log.d(TAG, "Aguardando resposta...")
+                val resposta = cliente!!.receber()
+                Log.d(TAG, "Resposta recebida: ${resposta::class.simpleName}")
+                return@withContext resposta
+
+            } catch (e: SocketException) {
+                Log.e(TAG, "ERRO (SocketException): Conexão perdida: ${e.message}", e)
+                desconectar()
+                return@withContext Resposta(false, "Conexão com o servidor foi perdida: ${e.message}")
+
+            } catch (e: Exception) {
+                val msgErro = e.message ?: "Exceção desconhecida"
+                Log.e(TAG, "ERRO (Exception) na requisição: $msgErro", e)
+                e.printStackTrace()
+                return@withContext Resposta(false, "Erro de rede: $msgErro")
+            }
+        }
+    }
+
+    suspend fun userSignIn(email: String, senha: String): RespostaDeLogin {
+        return try {
+            conectar()
+            if (!isConectado()) {
+                Log.e(TAG, "userSignIn: Não foi possível conectar")
+                return RespostaDeLogin(false, "Não foi possível conectar ao servidor.", null)
+            }
+
+            Log.d(TAG, "userSignIn: Enviando pedido de login para: $email")
+            val pedido = PedidoDeLogin(email, senha)
+            val resposta = enviarRequisicao(pedido)
+
+            Log.d(TAG, "userSignIn: Tipo da resposta recebida: ${resposta::class.simpleName}")
+
+            val respostaLogin: RespostaDeLogin = when (resposta) {
+                is RespostaDeLogin -> {
+                    Log.d(TAG, "userSignIn: RespostaDeLogin - sucesso: ${resposta.sucesso}, userId: ${resposta.userId}")
+                    resposta
+                }
+                is Resposta -> {
+                    Log.w(TAG, "userSignIn: Resposta genérica - sucesso: ${resposta.sucesso}, msg: ${resposta.mensagem}")
+                    RespostaDeLogin(resposta.sucesso, resposta.mensagem, null)
+                }
+                else -> {
+                    Log.e(TAG, "userSignIn: Resposta inesperada: ${resposta::class.simpleName}")
+                    RespostaDeLogin(false, "Resposta inesperada do servidor.", null)
+                }
+            }
+
+            if (!respostaLogin.sucesso) {
+                Log.w(TAG, "userSignIn: Login falhou, desconectando")
+                desconectar()
+            } else {
+                Log.d(TAG, "userSignIn: Login bem-sucedido!")
+            }
+
+            respostaLogin
+
+        } catch (e: Exception) {
+            Log.e(TAG, "userSignIn: Exceção: ${e.message}", e)
+            e.printStackTrace()
+            desconectar()
+            RespostaDeLogin(false, "Erro ao tentar fazer login: ${e.message}", null)
+        }
+    }
+
+    suspend fun searchForEmail(email: String): Resposta {
+        return try {
+            val pedido = PedidoBuscaEmail(email)
+            val resposta = enviarRequisicao(pedido)
+            resposta as? Resposta ?: Resposta(false, "Resposta inesperada.")
+        } catch (e: Exception) {
+            Log.e(TAG, "searchForEmail: Erro", e)
+            Resposta(false, "Erro ao buscar email: ${e.message}")
+        }
+    }
+
+    suspend fun userSignUp(
+        nome: String,
+        email: String,
+        senha: String,
+        apelido: String,
+        idFotoPerfil: Int
+    ): Resposta {
+        return try {
+            conectar()
+            if (!isConectado()){
+                return Resposta(false, "Não foi possível conectar ao servidor.")
+            }
+
+            val pedido = PedidoDeCadastro(
+                nome = nome,
+                email = email,
+                senha = senha,
+                apelido = apelido,
+                idFotoPerfil = idFotoPerfil,
+                dataHoraCriacao = Date()
+            )
+
+            val resposta = enviarRequisicao(pedido) as? Resposta
+                ?: Resposta(false, "Resposta inesperada.")
+
+            desconectar()
+            resposta
+        } catch (e: Exception) {
+            Log.e(TAG, "userSignUp: Erro", e)
+            desconectar()
+            Resposta(false, "Erro ao cadastrar: ${e.message}")
+        }
+    }
+
+    suspend fun newHabit(nome: String, userId: String): Resposta {
+        return try {
+            val pedido = PedidoDeNovoHabito(
+                nome = nome,
+                sequenciaCheckin = 0,
+                ultimoCheckin = null,
+                userId = userId
+            )
+
+            enviarRequisicao(pedido) as? Resposta
+                ?: Resposta(false, "Resposta inesperada.")
+        } catch (e: Exception) {
+            Log.e(TAG, "newHabit: Erro", e)
+            Resposta(false, "Erro ao criar hábito: ${e.message}")
+        }
+    }
+
+    suspend fun getHabitos(userId: String): RespostaListaHabitos {
+        return try {
+            val pedido = PedidoListaHabitos(userId)
+            val resposta = enviarRequisicao(pedido)
+
+            when (resposta) {
+                is RespostaListaHabitos -> resposta
+                is Resposta -> RespostaListaHabitos(false, resposta.mensagem, null)
+                else -> RespostaListaHabitos(false, "Resposta inesperada.", null)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "getHabitos: Erro", e)
+            RespostaListaHabitos(false, "Erro ao buscar hábitos: ${e.message}", null)
+        }
+    }
+
+    suspend fun realizarCheckin(habitoId: String): RespostaDeCheckin {
+        return try {
+            val pedido = PedidoDeCheckin(habitoId)
+            val resposta = enviarRequisicao(pedido)
+
+            when (resposta) {
+                is RespostaDeCheckin -> resposta
+                is Resposta -> RespostaDeCheckin(false, resposta.mensagem, null)
+                else -> RespostaDeCheckin(false, "Resposta inesperada.", null)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "realizarCheckin: Erro", e)
+            RespostaDeCheckin(false, "Erro ao fazer check-in: ${e.message}", null)
+        }
+    }
+}

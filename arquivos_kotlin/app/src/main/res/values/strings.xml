@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">salus</string>
+    <string name="title_activity_habitos_screen">HabitosScreen</string>
+    <string name="title_activity_tela_de_testes">TelaDeTestes</string>
 </resources>

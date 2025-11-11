@@ -17,7 +17,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 
-
+//splash
 @Composable
 fun SplashScreenVideo(onVideoEnded: () -> Unit) {
     val context = LocalContext.current

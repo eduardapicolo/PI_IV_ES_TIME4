@@ -25,7 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import br.com.salus.ui.theme.SalusTheme
 
-
+//main
 //TODO resolver bug do video
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

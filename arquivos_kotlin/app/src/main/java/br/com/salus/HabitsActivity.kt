@@ -28,7 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import br.com.salus.ui.theme.SalusTheme
 
-
+//habitos
 sealed class Screen(val route: String, val iconVector: ImageVector, val label: String) {
     object Habits : Screen("habits", Icons.Default.Home, "Meus Hábitos")
     object Competitions : Screen("competitions", Icons.Default.Star, "Competições")

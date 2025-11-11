@@ -2,9 +2,6 @@ package br.com.salus
 
 import android.widget.Toast
 import br.com.salus.mockCompetitionsList
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,68 +34,60 @@ import java.util.UUID
 import br.com.salus.CompetitionIconDialog
 import br.com.salus.getCompetitionIconResourceId
 
-class CompetitionsActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            SalusApp()
-        }
+// Este é o FAB (Botão de Ação) da tela de Competições
+@Composable
+fun CompetitionsFabContent() {
+    var showCreateCompetitionDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    if (showCreateCompetitionDialog) {
+        CreateCompetitionDialog(
+            onDismiss = { showCreateCompetitionDialog = false },
+            onCreate = { name, duration, iconId ->
+                val newCompetition = Competition(
+                    id = UUID.randomUUID().toString(),
+                    name = name,
+                    streak = 0,
+                    competitors = listOf(Competitor("eu", "Eu")),
+                    iconId = iconId
+                )
+                mockCompetitionsList.add(0, newCompetition)
+                Toast.makeText(context, "Simulado: '$name' criada!", Toast.LENGTH_SHORT).show()
+                showCreateCompetitionDialog = false
+            }
+        )
+    }
+
+    FloatingActionButton(
+        onClick = { showCreateCompetitionDialog = true },
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        shape = CircleShape
+    ) {
+        Icon(Icons.Default.Add, contentDescription = "Criar nova competição")
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+// Este é o CONTEÚDO da tela de Competições
 @Composable
-fun SalusApp() {
+fun CompetitionsContent() {
     val context = LocalContext.current
-
     val competitionsList = mockCompetitionsList
 
-    var showCreateDialog by remember { mutableStateOf(false) }
-
-    SalusTheme {
-        if (showCreateDialog) {
-            CreateCompetitionDialog(
-                onDismiss = { showCreateDialog = false },
-                onCreate = { name, duration, iconId ->
-                    val newCompetition = Competition(
-                        id = UUID.randomUUID().toString(),
-                        name = name,
-                        streak = 0,
-                        competitors = listOf(Competitor("eu", "Eu")),
-                        iconId = iconId
-                    )
-                    mockCompetitionsList.add(0, newCompetition)
-                    Toast.makeText(context, "Simulado: '$name' criada!", Toast.LENGTH_SHORT).show()
-
-                    showCreateDialog = false
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        items(competitionsList) { competition ->
+            CompetitionCard(
+                competition = competition,
+                onCardClick = {
+                    // TODO: Navegar para EachCompetitionActivity
+                    Toast.makeText(context, "Abrindo ${competition.name}", Toast.LENGTH_SHORT).show()
                 }
             )
         }
-
-        Scaffold(
-            topBar = {
-                SalusTopAppBar(onProfileClick = {
-                    Toast.makeText(context, "Abrir Perfil", Toast.LENGTH_SHORT).show()
-                })
-            },
-            bottomBar = { SalusBottomAppBar() },
-            floatingActionButton = {
-                SalusFAB(onCreateClick = {
-                    showCreateDialog = true
-                })
-            },
-            floatingActionButtonPosition = FabPosition.Center,
-            content = { paddingValues ->
-                Box(modifier = Modifier.padding(paddingValues)) {
-                    CompetitionsScreen(
-                        competitions = competitionsList,
-                        onCompetitionClick = { competition ->
-                            Toast.makeText(context, "Abrindo ${competition.name}", Toast.LENGTH_SHORT).show()
-                        }
-                    )
-                }
-            }
-        )
     }
 }
 
@@ -198,72 +187,6 @@ fun CreateCompetitionDialog(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SalusTopAppBar(onProfileClick: () -> Unit) {
-    TopAppBar(
-        title = { Text("Competições", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-        actions = {
-            IconButton(onClick = onProfileClick) {
-                Icon(Icons.Default.AccountCircle, contentDescription = "Perfil", modifier = Modifier.size(32.dp))
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-        },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-    )
-}
-
-@Composable
-fun SalusBottomAppBar() {
-    val context = LocalContext.current
-    val items = listOf(
-        BottomNavItem("Detalhes", Icons.Default.List, "competitions"),
-        BottomNavItem("Classif.", Icons.Default.EmojiEvents, "rankings"),
-        BottomNavItem("Amigos", Icons.Default.Groups, "friends_list")
-    )
-    NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 8.dp) {
-        items.forEach { item ->
-            NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.label) },
-                label = { Text(item.label) },
-                selected = item.route == "competitions",
-                onClick = {
-                    if (item.route != "competitions") {
-                        Toast.makeText(context, "Abrir ${item.label}", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            )
-        }
-    }
-}
-
-data class BottomNavItem(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val route: String)
-
-@Composable
-fun SalusFAB(onCreateClick: () -> Unit) {
-    FloatingActionButton(
-        onClick = onCreateClick,
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-        shape = CircleShape
-    ) {
-        Icon(Icons.Default.Add, contentDescription = "Criar")
-    }
-}
-
-@Composable
-fun CompetitionsScreen(competitions: List<Competition>, onCompetitionClick: (Competition) -> Unit) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(competitions) { competition ->
-            CompetitionCard(competition = competition, onCardClick = { onCompetitionClick(competition) })
-        }
-    }
-}
-
 @Composable
 fun CompetitionCard(competition: Competition, onCardClick: () -> Unit) {
     val context = LocalContext.current
@@ -280,11 +203,7 @@ fun CompetitionCard(competition: Competition, onCardClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = competition.name, style = MaterialTheme.typography.titleLarge)
-                IconButton(onClick = {
-                    Toast.makeText(context, "Ajustes de ${competition.name}", Toast.LENGTH_SHORT).show()
-                }) {
-                    Icon(Icons.Default.Settings, contentDescription = "Ajustes")
-                }
+                // Botão de engrenagem removido
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -325,47 +244,33 @@ fun CompetitorItem(competitor: Competitor) {
     }
 }
 
-// --- PREVIEWS ---
-
-@Preview(showBackground = true, name = "Tela Principal (App)")
+@Preview(showBackground = true, name = "Conteúdo - Tela de Competições")
 @Composable
-fun SalusAppPreview() {
+fun CompetitionsContentPreview() {
     SalusTheme {
-        SalusApp()
+        CompetitionsContent()
     }
 }
 
 @Preview(showBackground = true, name = "Card de Competição")
 @Composable
 fun CompetitionCardPreview() {
-    val previewCompetitors = listOf(
-        Competitor("1", "Ana"),
-        Competitor("2", "Bruno"),
-        Competitor("3", "Carla")
-    )
-    val previewCompetition = Competition(
-        id = "p1",
-        name = "Desafio de Foco",
-        streak = 7,
-        competitors = previewCompetitors,
-        iconId = 1
-    )
-
+    // Usamos dados de exemplo do seu MockData
     SalusTheme {
         CompetitionCard(
-            competition = previewCompetition,
+            competition = mockCompetitionsList[0], // Pega a primeira competição
             onCardClick = {}
         )
     }
 }
 
-@Preview(showBackground = true, name = "Dialog de Criação")
+@Preview(showBackground = true, name = "Dialog - Criar Competição")
 @Composable
-fun CreateDialogPreview() {
+fun CreateCompetitionDialogPreview() {
     SalusTheme {
         CreateCompetitionDialog(
             onDismiss = {},
-            onCreate = {_, _, _ ->}
+            onCreate = { _, _, _ -> }
         )
     }
 }

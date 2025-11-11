@@ -170,7 +170,7 @@ fun SignInScreen() {
 
                     Button(
                         onClick = {
-                            val intent = Intent(context, HabitsActivity::class.java)
+                            val intent = Intent(context, MainActivity::class.java)
                             context.startActivity(intent)
                         },
                         enabled = isFormValid,

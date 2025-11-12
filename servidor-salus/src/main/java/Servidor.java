@@ -41,13 +41,14 @@ public class Servidor
         //DAO = Data Access Object, usuarioDAO serve para todos os fins que se comunicam com o banco de dados
         Usuario usuarioDAO = new Usuario(database);
         Habito habitoDAO = new Habito(database);
+        Competicao competicaoDAO = new Competicao(database);
 
         ArrayList<Parceiro> usuarios = new ArrayList<Parceiro> ();
 
         AceitadoraDeConexao aceitadoraDeConexao = null;
         try
         {
-            aceitadoraDeConexao = new AceitadoraDeConexao (porta, usuarios,usuarioDAO, habitoDAO);
+            aceitadoraDeConexao = new AceitadoraDeConexao (porta, usuarios,usuarioDAO, habitoDAO, competicaoDAO);
             aceitadoraDeConexao.start();
         }
         catch (Exception erro)

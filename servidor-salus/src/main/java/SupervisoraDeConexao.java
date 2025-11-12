@@ -11,8 +11,9 @@ public class SupervisoraDeConexao extends Thread
     private ArrayList<Parceiro> usuarios;
     private Usuario             usuarioDAO;
     private Habito              habitoDAO;
+    private Competicao          competicaoDAO;
 
-    public SupervisoraDeConexao (Socket conexao, ArrayList<Parceiro> usuarios, Usuario usuarioDAO, Habito habitoDAO) throws Exception
+    public SupervisoraDeConexao (Socket conexao, ArrayList<Parceiro> usuarios, Usuario usuarioDAO, Habito habitoDAO, Competicao competicaoDAO) throws Exception
     {
         if (conexao==null)
             throw new Exception ("Conexao ausente");
@@ -24,6 +25,7 @@ public class SupervisoraDeConexao extends Thread
         this.usuarios = usuarios;
         this.usuarioDAO = usuarioDAO;
         this.habitoDAO = habitoDAO;
+        this.competicaoDAO = competicaoDAO;
     }
 
     public void run ()
@@ -100,6 +102,18 @@ public class SupervisoraDeConexao extends Thread
                 {
                     PedidoDeCheckin pedido = (PedidoDeCheckin) comunicado;
                     Resposta resposta = this.habitoDAO.realizarCheckin(pedido);
+                    this.parceiro.receba(resposta);
+                }
+                else if (comunicado instanceof PedidoDeNovaCompeticao)
+                {
+                    PedidoDeNovaCompeticao pedido = (PedidoDeNovaCompeticao) comunicado;
+                    Resposta resposta = this.competicaoDAO.criarCompeticao(pedido);
+                    this.parceiro.receba(resposta);
+                }
+                else if (comunicado instanceof PedidoEntrarCompeticao)
+                {
+                    PedidoEntrarCompeticao pedido = (PedidoEntrarCompeticao) comunicado;
+                    Resposta resposta = this.competicaoDAO.entrarNaCompeticao(pedido);
                     this.parceiro.receba(resposta);
                 }
                 else if (comunicado instanceof PedidoParaSair)

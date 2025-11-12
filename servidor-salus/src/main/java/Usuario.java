@@ -64,11 +64,6 @@ public class Usuario {
     }
 
     public Resposta loginUsuario (PedidoDeLogin pedido) {
-        System.out.println("\n========================================");
-        System.out.println("=== DEBUG: loginUsuario ===");
-        System.out.println("Email recebido: " + pedido.getEmail());
-        System.out.println("Senha recebida: " + (pedido.getSenha() != null ? pedido.getSenha().substring(0, Math.min(3, pedido.getSenha().length())) + "***" : "null"));
-
         try {
             Document usuarioExistente = this.colecaoUsuarios.find(
                     Filters.and(
@@ -79,36 +74,16 @@ public class Usuario {
 
             if (usuarioExistente != null) {
                 String userId = usuarioExistente.getObjectId("_id").toHexString();
-                System.out.println("✅ Usuário encontrado! UserId: " + userId);
-                System.out.println("Criando RespostaDeLogin com sucesso=true");
-
                 RespostaDeLogin resposta = new RespostaDeLogin(true, "Login com sucesso", userId);
-
-                System.out.println("RespostaDeLogin criada:");
-                System.out.println("  - Sucesso: " + resposta.getSucesso());
-                System.out.println("  - Mensagem: " + resposta.getMensagem());
-                System.out.println("  - UserId: " + resposta.getUserId());
-                System.out.println("========================================\n");
-
                 return resposta;
             }
 
-            System.out.println("❌ Usuário NÃO encontrado no banco");
-            System.out.println("Criando RespostaDeLogin com sucesso=false");
-
             RespostaDeLogin respostaFalha = new RespostaDeLogin(false, "E-mail ou senha incorreto.");
-
-            System.out.println("RespostaDeLogin criada:");
-            System.out.println("  - Sucesso: " + respostaFalha.getSucesso());
-            System.out.println("  - Mensagem: " + respostaFalha.getMensagem());
-            System.out.println("========================================\n");
-
             return respostaFalha;
 
         } catch (Exception e) {
-            System.err.println("❌ EXCEÇÃO no loginUsuario: " + e.getMessage());
+            System.err.println("EXCEÇÃO no loginUsuario: " + e.getMessage());
             e.printStackTrace();
-            System.out.println("========================================\n");
             return new Resposta(false,"Erro interno no servidor " + e.getMessage());
         }
     }

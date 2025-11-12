@@ -3,16 +3,11 @@ package br.com.salus
 import java.io.Serializable
 import java.util.Date
 
-// Classe base - deve corresponder exatamente ao Java
 open class Comunicado : Serializable {
     companion object {
         private const val serialVersionUID = 1L
     }
 }
-
-// ============================================
-// PEDIDOS (Request classes)
-// ============================================
 
 class PedidoBuscaEmail(val email: String) : Comunicado() {
     companion object {
@@ -65,18 +60,38 @@ class PedidoDeCheckin(val idHabito: String) : Comunicado() {
     }
 }
 
+class PedidoDeNovaCompeticao(
+    val nome: String,
+    val idCriador: String
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 14L
+    }
+}
+
+class PedidoEntrarCompeticao(
+    val codigo: String,
+    val idUsuario: String
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 16L
+    }
+}
+
+class PedidoBuscaCompeticao(
+    val idUsuario: String
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 18L
+    }
+}
+
 class PedidoParaSair : Comunicado() {
     companion object {
         private const val serialVersionUID = 4L
     }
 }
 
-// ============================================
-// RESPOSTAS (Response classes)
-// IMPORTANTE: Devem corresponder EXATAMENTE às classes Java
-// ============================================
-
-// Resposta base - exatamente como no Java
 open class Resposta : Comunicado {
     val sucesso: Boolean
     val mensagem: String
@@ -95,17 +110,14 @@ open class Resposta : Comunicado {
     }
 }
 
-// RespostaDeLogin - exatamente como no Java
 class RespostaDeLogin : Resposta {
     val userId: String?
 
-    // Construtor com userId
-    constructor(sucesso: Boolean, msg: String, userId: String?) : super(sucesso, msg) {
+    constructor(sucesso: Boolean, msg: String, userId: String?): super(sucesso, msg) {
         this.userId = userId
     }
 
-    // Construtor sem userId
-    constructor(sucesso: Boolean, msg: String) : super(sucesso, msg) {
+    constructor(sucesso: Boolean, msg: String): super(sucesso, msg) {
         this.userId = null
     }
 
@@ -114,15 +126,14 @@ class RespostaDeLogin : Resposta {
     }
 }
 
-// RespostaListaHabitos - exatamente como no Java
 class RespostaListaHabitos : Resposta {
     val habitos: List<DocumentoHabito>?
 
-    constructor(sucesso: Boolean, mensagem: String, habitos: List<DocumentoHabito>?) : super(sucesso, mensagem) {
+    constructor(sucesso: Boolean, mensagem: String, habitos: List<DocumentoHabito>?): super(sucesso, mensagem) {
         this.habitos = habitos
     }
 
-    constructor(sucesso: Boolean, mensagem: String) : super(sucesso, mensagem) {
+    constructor(sucesso: Boolean, mensagem: String): super(sucesso, mensagem) {
         this.habitos = null
     }
 
@@ -131,7 +142,6 @@ class RespostaListaHabitos : Resposta {
     }
 }
 
-// RespostaDeCheckin - exatamente como no Java
 class RespostaDeCheckin : Resposta {
     val habitoAtualizado: DocumentoHabito?
 
@@ -148,9 +158,59 @@ class RespostaDeCheckin : Resposta {
     }
 }
 
-// ============================================
-// DTOs (Data Transfer Objects)
-// ============================================
+class RespostaDeNovaCompeticao : Resposta {
+    val idCompeticao: String?
+    val codigo: String?
+
+    constructor(sucesso: Boolean, mensagem: String, idCompeticao: String?, codigo: String?) : super(sucesso, mensagem) {
+        this.idCompeticao = idCompeticao
+        this.codigo = codigo
+    }
+
+    constructor(sucesso: Boolean, mensagem: String) : super(sucesso, mensagem) {
+        this.idCompeticao = null
+        this.codigo = null
+    }
+
+    companion object {
+        private const val serialVersionUID = 15L
+    }
+}
+
+class RespostaEntrarCompeticao : Resposta {
+    val idCompeticao: String?
+    val nomeCompeticao: String?
+
+    constructor(sucesso: Boolean, mensagem: String, idCompeticao: String?, nomeCompeticao: String?) : super(sucesso, mensagem) {
+        this.idCompeticao = idCompeticao
+        this.nomeCompeticao = nomeCompeticao
+    }
+
+    constructor(sucesso: Boolean, mensagem: String) : super(sucesso, mensagem) {
+        this.idCompeticao = null
+        this.nomeCompeticao = null
+    }
+
+    companion object {
+        private const val serialVersionUID = 17L
+    }
+}
+
+class RespostaBuscaCompeticao : Resposta {
+    val competicoes: List<DocumentoCompeticao>?
+
+    constructor(sucesso: Boolean, mensagem: String, competicoes: List<DocumentoCompeticao>?) : super(sucesso, mensagem) {
+        this.competicoes = competicoes
+    }
+
+    constructor(sucesso: Boolean, mensagem: String) : super(sucesso, mensagem) {
+        this.competicoes = null
+    }
+
+    companion object {
+        private const val serialVersionUID = 19L
+    }
+}
 
 class DocumentoHabito(
     val id: String,
@@ -160,5 +220,26 @@ class DocumentoHabito(
 ) : Serializable {
     companion object {
         private const val serialVersionUID = 10L
+    }
+}
+
+class DocumentoParticipante(
+    val idUsuario: String,
+    val apelidoUsuario: String
+) : Serializable {
+    companion object {
+        private const val serialVersionUID = 20L
+    }
+}
+
+class DocumentoCompeticao(
+    val id: String,
+    val nome: String,
+    val codigo: String,
+    val idCriador: String,
+    val participantes: List<DocumentoParticipante>
+) : Serializable {
+    companion object {
+        private const val serialVersionUID = 21L
     }
 }

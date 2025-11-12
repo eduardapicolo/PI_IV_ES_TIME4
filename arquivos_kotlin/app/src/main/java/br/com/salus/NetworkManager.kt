@@ -76,7 +76,10 @@ object NetworkManager {
         }
     }
 
-    suspend fun userSignIn(email: String, senha: String): RespostaDeLogin {
+    suspend fun userSignIn(
+        email: String,
+        senha: String
+    ): RespostaDeLogin {
         return try {
             conectar()
             if (!isConectado()) {
@@ -167,7 +170,10 @@ object NetworkManager {
         }
     }
 
-    suspend fun newHabit(nome: String, userId: String): Resposta {
+    suspend fun newHabit(
+        nome: String,
+        userId: String
+    ): Resposta {
         return try {
             val pedido = PedidoDeNovoHabito(
                 nome = nome,
@@ -213,6 +219,58 @@ object NetworkManager {
         } catch (e: Exception) {
             Log.e(TAG, "realizarCheckin: Erro", e)
             RespostaDeCheckin(false, "Erro ao fazer check-in: ${e.message}", null)
+        }
+    }
+
+    suspend fun criarCompeticao(nome: String, idCriador: String): RespostaDeNovaCompeticao {
+        return try {
+            Log.d(TAG, "criarCompeticao: nome=$nome, criador=$idCriador")
+            val pedido = PedidoDeNovaCompeticao(nome, idCriador)
+            val resposta = enviarRequisicao(pedido)
+
+            when (resposta) {
+                is RespostaDeNovaCompeticao -> {
+                    Log.d(TAG, "Competição criada! Código: ${resposta.codigo}")
+                    resposta
+                }
+                is Resposta -> {
+                    Log.w(TAG, "Resposta genérica: ${resposta.mensagem}")
+                    RespostaDeNovaCompeticao(false, resposta.mensagem, null, null)
+                }
+                else -> {
+                    Log.e(TAG, "Resposta inesperada")
+                    RespostaDeNovaCompeticao(false, "Resposta inesperada.", null, null)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "criarCompeticao: Erro", e)
+            RespostaDeNovaCompeticao(false, "Erro ao criar competição: ${e.message}", null, null)
+        }
+    }
+
+    suspend fun entrarNaCompeticao(codigo: String, idUsuario: String): RespostaEntrarCompeticao {
+        return try {
+            Log.d(TAG, "entrarNaCompeticao: codigo=$codigo, usuario=$idUsuario")
+            val pedido = PedidoEntrarCompeticao(codigo, idUsuario)
+            val resposta = enviarRequisicao(pedido)
+
+            when (resposta) {
+                is RespostaEntrarCompeticao -> {
+                    Log.d(TAG, "Resposta recebida: ${resposta.mensagem}")
+                    resposta
+                }
+                is Resposta -> {
+                    Log.w(TAG, "Resposta genérica: ${resposta.mensagem}")
+                    RespostaEntrarCompeticao(false, resposta.mensagem, null, null)
+                }
+                else -> {
+                    Log.e(TAG, "Resposta inesperada")
+                    RespostaEntrarCompeticao(false, "Resposta inesperada.", null, null)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "entrarNaCompeticao: Erro", e)
+            RespostaEntrarCompeticao(false, "Erro ao entrar na competição: ${e.message}", null, null)
         }
     }
 }

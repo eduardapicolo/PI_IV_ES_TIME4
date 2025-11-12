@@ -9,8 +9,9 @@ public class AceitadoraDeConexao extends Thread
     private ArrayList<Parceiro> usuarios;
     private Usuario             usuarioDAO;
     private Habito              habitoDAO;
+    private Competicao          competicaoDAO;
 
-    public AceitadoraDeConexao (String porta, ArrayList<Parceiro> usuarios,Usuario usuarioDAO, Habito habitoDAO) throws Exception
+    public AceitadoraDeConexao (String porta, ArrayList<Parceiro> usuarios,Usuario usuarioDAO, Habito habitoDAO, Competicao competicaoDAO) throws Exception
     {
         if (porta==null)
             throw new Exception ("Porta ausente");
@@ -31,6 +32,7 @@ public class AceitadoraDeConexao extends Thread
 
         this.usuarioDAO = usuarioDAO;
         this.habitoDAO = habitoDAO;
+        this.competicaoDAO = competicaoDAO;
     }
 
     public void run ()
@@ -50,7 +52,7 @@ public class AceitadoraDeConexao extends Thread
             SupervisoraDeConexao supervisoraDeConexao = null;
             try
             {
-                supervisoraDeConexao = new SupervisoraDeConexao (conexao, usuarios,this.usuarioDAO, this.habitoDAO);
+                supervisoraDeConexao = new SupervisoraDeConexao (conexao, usuarios,this.usuarioDAO, this.habitoDAO, this.competicaoDAO);
             }
             catch (Exception erro)
             {} // sei que passei parametros corretos para o construtor

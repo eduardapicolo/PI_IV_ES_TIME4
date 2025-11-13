@@ -138,7 +138,6 @@ fun SignInScreen() {
                         .padding(horizontal = 32.dp)
                         .padding(top = 32.dp),
                 ) {
-                    // Agora isso usa a função importada de SignUpUtilities.kt
                     InputBox(
                         value = email,
                         onValueChange = { email = it },
@@ -148,7 +147,6 @@ fun SignInScreen() {
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // E isso também usa a função importada
                     PasswordInputBox(
                         value = password,
                         onValueChange = { password = it },

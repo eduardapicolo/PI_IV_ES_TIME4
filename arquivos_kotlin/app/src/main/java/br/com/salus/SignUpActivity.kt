@@ -61,8 +61,6 @@ import br.com.salus.PasswordRequirement
 import br.com.salus.isEmailValid
 import br.com.salus.ProfilePictureDialog
 import br.com.salus.getProfilePictureResourceId
-// --- FIM DA CORREÇÃO ---
-
 
 class SignUpActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

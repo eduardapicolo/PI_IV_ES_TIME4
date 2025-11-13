@@ -65,11 +65,11 @@ class CompetitionConfigActivity : ComponentActivity() {
                     },
                     onSaveClicked = { nome, iconeId ->
                         //TODO LOGICA DE SALVAR DADOS
-                        finish() //fecha a tela depois
+                        finish()
                     },
                     onDeleteClicked = {
                         // TODO LOGICA DE EXCLUIR COMPETICAO
-                        finish() // fecha a tela depois
+                        finish()
                     }
                 )
             }

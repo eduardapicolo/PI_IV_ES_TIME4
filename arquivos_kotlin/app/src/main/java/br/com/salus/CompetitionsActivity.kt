@@ -1,6 +1,6 @@
 package br.com.salus
 
-import android.content.Intent // Import necessário para navegação
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -86,7 +86,6 @@ fun CompetitionsContent() {
             CompetitionCard(
                 competition = competition,
                 onCardClick = {
-                    // ** Lógica de Navegação Implementada **
                     val intent = Intent(context, EachCompetitionActivity::class.java).apply {
                         putExtra(EachCompetitionActivity.EXTRA_COMPETITION_ID, competition.id)
                     }
@@ -102,7 +101,6 @@ fun CreateCompetitionDialog(
     onDismiss: () -> Unit,
     onCreate: (name: String, duration: String, iconId: Int) -> Unit
 ) {
-    // Código da função CreateCompetitionDialog... (Inalterado, exceto o valor de duration)
     var name by remember { mutableStateOf("") }
     var duration by remember { mutableStateOf("") }
     var selectedIconId by remember { mutableStateOf(1) }
@@ -199,7 +197,6 @@ fun CompetitionCard(competition: Competition, onCardClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            // Torna toda a Card clicável
             .clickable(onClick = onCardClick),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -215,7 +212,6 @@ fun CompetitionCard(competition: Competition, onCardClick: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Assumindo getCompetitionIconResourceId(competition.iconId) existe
                 Image(
                     painter = painterResource(id = getCompetitionIconResourceId(competition.iconId)),
                     contentDescription = "Ícone",
@@ -238,7 +234,6 @@ fun CompetitionCard(competition: Competition, onCardClick: () -> Unit) {
     }
 }
 
-// --- Outros componentes e Previews (Inalterados, exceto a possível necessidade de importar R) ---
 @Composable
 fun CompetitorsHorizontalList(competitors: List<Competitor>) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 4.dp)) {

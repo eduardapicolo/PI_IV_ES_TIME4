@@ -37,6 +37,10 @@
             android:exported="false"
             android:label="Conffigurações de Competição"
             android:theme="@style/Theme.Salus"></activity>
+        <activity
+            android:name=".EachCompetitionActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Salus" />
     </application>
 
 </manifest>

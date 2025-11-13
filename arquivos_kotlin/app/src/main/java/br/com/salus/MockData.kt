@@ -1,14 +1,16 @@
 package br.com.salus
 
 import androidx.compose.runtime.mutableStateListOf
-import java.util.UUID
 
-// --- DATA CLASSES ---
-// (Bom mantê-las aqui ou em um arquivo "models")
 
 data class Competitor(
     val id: String,
     val name: String,
+)
+
+data class Participant(
+    val name: String,
+    val currentStreak: Int
 )
 
 data class Competition(
@@ -16,12 +18,11 @@ data class Competition(
     val name: String,
     val streak: Int,
     val competitors: List<Competitor>,
-    val iconId: Int
+    val iconId: Int,
+    val durationDays: Int,
+    val participants: List<Participant>
 )
 
-// --- MOCK DATA ---
-
-// Lista de competidores "gerais"
 val mockCompetitors = listOf(
     Competitor("1", "Ana"),
     Competitor("2", "Bruno"),
@@ -30,31 +31,42 @@ val mockCompetitors = listOf(
     Competitor("5", "Elisa")
 )
 
-/**
- * Esta é a lista "viva" de competições.
- * TODO: BD - No futuro, isso será substituído por uma
- * consulta ao seu banco de dados (ex: um Flow do Room).
- */
+fun generateMockParticipants(competitors: List<Competitor>): List<Participant> {
+    return competitors.mapIndexed { index, competitor ->
+        Participant(
+            name = competitor.name,
+            currentStreak = 3
+        )
+    }
+}
+
+
 val mockCompetitionsList = mutableStateListOf(
     Competition(
         id = "c1",
         name = "21 Dias de Foco",
         streak = 5,
         competitors = mockCompetitors.shuffled().take(3),
-        iconId = 1
+        iconId = 1,
+        durationDays = 21,
+        participants = generateMockParticipants(mockCompetitors.shuffled().take(3))
     ),
     Competition(
         id = "c2",
         name = "Desafio da Meditação",
         streak = 12,
         competitors = mockCompetitors.shuffled().take(4),
-        iconId = 2
+        iconId = 2,
+        durationDays = 30,
+        participants = generateMockParticipants(mockCompetitors.shuffled().take(4))
     ),
     Competition(
         id = "c3",
         name = "Manhãs Milagrosas",
         streak = 2,
         competitors = mockCompetitors.shuffled().take(5),
-        iconId = 3
+        iconId = 3,
+        durationDays = 14,
+        participants = generateMockParticipants(mockCompetitors.shuffled().take(5))
     )
 )

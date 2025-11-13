@@ -1,7 +1,7 @@
 package br.com.salus
 
+import android.content.Intent // Import necessário para navegação
 import android.widget.Toast
-import br.com.salus.mockCompetitionsList
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,11 +30,6 @@ import androidx.compose.ui.unit.dp
 import br.com.salus.ui.theme.SalusTheme
 import java.util.UUID
 
-// Imports das funções de utilitários (necessários para compilar)
-import br.com.salus.CompetitionIconDialog
-import br.com.salus.getCompetitionIconResourceId
-
-// Este é o FAB (Botão de Ação) da tela de Competições
 @Composable
 fun CompetitionsFabContent() {
     var showCreateCompetitionDialog by remember { mutableStateOf(false) }
@@ -44,12 +39,21 @@ fun CompetitionsFabContent() {
         CreateCompetitionDialog(
             onDismiss = { showCreateCompetitionDialog = false },
             onCreate = { name, duration, iconId ->
+                val durationInt = duration.toIntOrNull() ?: 7
+
                 val newCompetition = Competition(
                     id = UUID.randomUUID().toString(),
                     name = name,
                     streak = 0,
                     competitors = listOf(Competitor("eu", "Eu")),
-                    iconId = iconId
+                    iconId = iconId,
+                    durationDays = durationInt,
+                    participants = listOf(
+                        Participant(
+                            name = "Eu",
+                            currentStreak = 0
+                        )
+                    )
                 )
                 mockCompetitionsList.add(0, newCompetition)
                 Toast.makeText(context, "Simulado: '$name' criada!", Toast.LENGTH_SHORT).show()
@@ -68,7 +72,6 @@ fun CompetitionsFabContent() {
     }
 }
 
-// Este é o CONTEÚDO da tela de Competições
 @Composable
 fun CompetitionsContent() {
     val context = LocalContext.current
@@ -83,8 +86,11 @@ fun CompetitionsContent() {
             CompetitionCard(
                 competition = competition,
                 onCardClick = {
-                    // TODO: Navegar para EachCompetitionActivity
-                    Toast.makeText(context, "Abrindo ${competition.name}", Toast.LENGTH_SHORT).show()
+                    // ** Lógica de Navegação Implementada **
+                    val intent = Intent(context, EachCompetitionActivity::class.java).apply {
+                        putExtra(EachCompetitionActivity.EXTRA_COMPETITION_ID, competition.id)
+                    }
+                    context.startActivity(intent)
                 }
             )
         }
@@ -96,6 +102,7 @@ fun CreateCompetitionDialog(
     onDismiss: () -> Unit,
     onCreate: (name: String, duration: String, iconId: Int) -> Unit
 ) {
+    // Código da função CreateCompetitionDialog... (Inalterado, exceto o valor de duration)
     var name by remember { mutableStateOf("") }
     var duration by remember { mutableStateOf("") }
     var selectedIconId by remember { mutableStateOf(1) }
@@ -189,9 +196,11 @@ fun CreateCompetitionDialog(
 
 @Composable
 fun CompetitionCard(competition: Competition, onCardClick: () -> Unit) {
-    val context = LocalContext.current
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            // Torna toda a Card clicável
+            .clickable(onClick = onCardClick),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -203,10 +212,10 @@ fun CompetitionCard(competition: Competition, onCardClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = competition.name, style = MaterialTheme.typography.titleLarge)
-                // Botão de engrenagem removido
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Assumindo getCompetitionIconResourceId(competition.iconId) existe
                 Image(
                     painter = painterResource(id = getCompetitionIconResourceId(competition.iconId)),
                     contentDescription = "Ícone",
@@ -221,6 +230,7 @@ fun CompetitionCard(competition: Competition, onCardClick: () -> Unit) {
             Spacer(modifier = Modifier.height(8.dp))
             CompetitorsHorizontalList(competitors = competition.competitors)
             Spacer(modifier = Modifier.height(24.dp))
+            // Botão mantido para fins de UX, mas o clique faz a mesma navegação da Card
             Button(onClick = onCardClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                 Text("Ver Detalhes")
             }
@@ -228,6 +238,7 @@ fun CompetitionCard(competition: Competition, onCardClick: () -> Unit) {
     }
 }
 
+// --- Outros componentes e Previews (Inalterados, exceto a possível necessidade de importar R) ---
 @Composable
 fun CompetitorsHorizontalList(competitors: List<Competitor>) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 4.dp)) {
@@ -255,10 +266,9 @@ fun CompetitionsContentPreview() {
 @Preview(showBackground = true, name = "Card de Competição")
 @Composable
 fun CompetitionCardPreview() {
-    // Usamos dados de exemplo do seu MockData
     SalusTheme {
         CompetitionCard(
-            competition = mockCompetitionsList[0], // Pega a primeira competição
+            competition = mockCompetitionsList[0],
             onCardClick = {}
         )
     }

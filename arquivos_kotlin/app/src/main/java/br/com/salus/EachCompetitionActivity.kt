@@ -1,5 +1,6 @@
 package br.com.salus
 
+import androidx.compose.ui.text.style.TextOverflow
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
@@ -15,7 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -31,12 +32,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import br.com.salus.ui.theme.SalusTheme
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-
-// ** Assumindo que getCompetitionIconResourceId está definida em CompetitionUtilities.kt **
-// import br.com.salus.getCompetitionIconResourceId
 
 class EachCompetitionActivity : ComponentActivity() {
 
@@ -51,7 +50,6 @@ class EachCompetitionActivity : ComponentActivity() {
 
         val competitionId = intent.getStringExtra(EXTRA_COMPETITION_ID)
 
-        // Busca a competição pelo ID passado no Intent
         competition = mockCompetitionsList.find { it.id == competitionId }
 
         if (competition == null) {
@@ -74,9 +72,6 @@ fun EachCompetitionScreen(competition: Competition?) {
 
     val context = LocalContext.current as? Activity
 
-    // ... [Seu código para competition == null está aqui]
-
-    // Tratamento inicial de competition == null
     if (competition == null) {
         SalusTheme {
             Scaffold { padding ->
@@ -91,11 +86,16 @@ fun EachCompetitionScreen(competition: Competition?) {
         return
     }
 
-    // Calculando quantos dias faltam
+    val sortedParticipants = remember(competition.participants) {
+        competition.participants.sortedByDescending { it.currentStreak }
+    }
+
+    val topThree = sortedParticipants.take(3)
+    val remainingParticipants = sortedParticipants.drop(3)
+
     val daysLeft = remember {
         try {
             val today = LocalDate.now()
-            // Assumindo que a competição começou hoje e durará durationDays
             val endDate = today.plusDays(competition.durationDays.toLong())
             ChronoUnit.DAYS.between(today, endDate).coerceAtLeast(0)
         } catch (e: Exception) {
@@ -115,8 +115,8 @@ fun EachCompetitionScreen(competition: Competition?) {
                 actions = {
                     IconButton(onClick = {
                         Toast.makeText(context, "Abrir tela de Edição", Toast.LENGTH_SHORT).show()
+                        // TODO: Implementar navegação para CompetitionConfigActivity
                         val intent = Intent(context, CompetitionConfigActivity::class.java).apply {
-                            // TODO: Passar o ID para edição
                         }
                         context?.startActivity(intent)
                     }) {
@@ -138,14 +138,12 @@ fun EachCompetitionScreen(competition: Competition?) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
 
-            // --- 1. CABEÇALHO COM NOME, ÍCONE E STREAK ---
             Spacer(modifier = Modifier.height(16.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
             ) {
-                // 🔄 CORREÇÃO: Usando o ícone real da competição (iconId)
                 Image(
                     painter = painterResource(id = getCompetitionIconResourceId(competition.iconId)),
                     contentDescription = "Ícone da Competição",
@@ -171,9 +169,6 @@ fun EachCompetitionScreen(competition: Competition?) {
                 }
             }
             Spacer(modifier = Modifier.height(32.dp))
-
-            // --- 2. DURAÇÃO E TEMPO RESTANTE (Card) ---
-            // ... (restante do código da DURAÇÃO inalterado)
 
             Card(
                 modifier = Modifier
@@ -203,22 +198,34 @@ fun EachCompetitionScreen(competition: Competition?) {
             }
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- 3. PARTICIPANTES (Lista) ---
-            Text(
-                text = "Participantes",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                textAlign = TextAlign.Start
-            )
+            if (topThree.isNotEmpty()) {
+                Text(
+                    text = "Líderes da Sequência",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    textAlign = TextAlign.Start
+                )
+                CompetitionPodium(topParticipants = topThree)
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
-            if (competition.participants.isNotEmpty()) {
-                competition.participants.forEach { participant ->
-                    // 🔄 CORREÇÃO: Passando a sequência (assumindo que score é a sequência)
+
+            if (remainingParticipants.isNotEmpty()) {
+                Text(
+                    text = "Outros Participantes",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    textAlign = TextAlign.Start
+                )
+
+                remainingParticipants.forEach { participant ->
                     ParticipantItem(name = participant.name, currentStreak = participant.currentStreak)
                 }
-            } else {
+            } else if (competition.participants.isEmpty()) {
                 Text(
                     text = "Nenhum participante ainda",
                     modifier = Modifier.padding(16.dp),
@@ -228,6 +235,107 @@ fun EachCompetitionScreen(competition: Competition?) {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+fun CompetitionPodium(topParticipants: List<Participant>) {
+    val podiumColor = MaterialTheme.colorScheme.primaryContainer
+    val gold = Color(0xFFD4AF37)
+
+    val second = topParticipants.getOrNull(1)
+    val first = topParticipants.getOrNull(0)
+    val third = topParticipants.getOrNull(2)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.Bottom
+    ) {
+        PodiumRank(participant = second, rank = 2, heightMultiplier = 0.8f, containerColor = podiumColor)
+        Spacer(Modifier.width(8.dp))
+
+        PodiumRank(participant = first, rank = 1, heightMultiplier = 1.0f, containerColor = gold)
+        Spacer(Modifier.width(8.dp))
+
+        PodiumRank(participant = third, rank = 3, heightMultiplier = 0.6f, containerColor = podiumColor)
+    }
+}
+
+@Composable
+fun RowScope.PodiumRank(
+    participant: Participant?,
+    rank: Int,
+    heightMultiplier: Float,
+    containerColor: Color
+) {
+    val height = 150.dp * heightMultiplier
+    val width = 80.dp
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(width)
+    ) {
+        if (participant != null) {
+            if (rank == 1) {
+                Icon(
+                    Icons.Filled.EmojiEvents,
+                    contentDescription = "Primeiro Lugar",
+                    tint = Color.Black,
+                    modifier = Modifier.size(30.dp).offset(y = 10.dp)
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.tertiary),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = participant.name.first().uppercase(),
+                    color = MaterialTheme.colorScheme.onTertiary,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            Text(text = participant.name,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold, maxLines = 1
+            )
+            Text(
+                text = "${participant.currentStreak} dias",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary
+            )
+        } else {
+            Spacer(modifier = Modifier.height(54.dp))
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(height)
+                .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                .background(containerColor),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Text(
+                text = "#$rank",
+                color = Color.Black,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(4.dp)
+            )
         }
     }
 }
@@ -245,7 +353,6 @@ fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecifie
     }
 }
 
-// 🔄 CORREÇÃO: Renomeado "score" para "currentStreak" para clareza e exibição
 @Composable
 fun ParticipantItem(name: String, currentStreak: Int) {
     Card(
@@ -270,7 +377,6 @@ fun ParticipantItem(name: String, currentStreak: Int) {
                 )
                 Text(name, style = MaterialTheme.typography.bodyLarge)
             }
-            // 🔄 CORREÇÃO: Exibindo a Sequência (Streak)
             Text(
                 text = "Sequência: $currentStreak dias",
                 style = MaterialTheme.typography.bodyLarge,
@@ -280,7 +386,6 @@ fun ParticipantItem(name: String, currentStreak: Int) {
     }
 }
 
-// --- PREVIEW ---
 @Preview(showBackground = true)
 @Composable
 fun EachCompetitionScreenPreview() {
@@ -288,14 +393,15 @@ fun EachCompetitionScreenPreview() {
         EachCompetitionScreen(
             competition = Competition(
                 id = "1",
-                name = "30 Dias de Hidratação",
+                name = "Desafio do Pódio",
                 streak = 15,
                 durationDays = 30,
-                // Assumindo que 'Participant' foi atualizado para usar 'currentStreak' em vez de 'score'
                 participants = listOf(
-                    Participant("Alice", 15),
-                    Participant("Bob", 12),
-                    Participant("Charlie", 9)
+                    Participant("Alice", 25),
+                    Participant("Bob", 15),
+                    Participant("Charlie", 5),
+                    Participant("Diana", 3),
+                    Participant("Eduardo", 1)
                 ),
                 competitors = emptyList(),
                 iconId = 1

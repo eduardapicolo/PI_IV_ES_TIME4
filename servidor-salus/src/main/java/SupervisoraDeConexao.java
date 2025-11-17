@@ -121,6 +121,11 @@ public class SupervisoraDeConexao extends Thread
                     PedidoBuscaCompeticao pedido = (PedidoBuscaCompeticao) comunicado;
                     Resposta resposta = this.competicaoDAO.getCompeticoes(pedido);
                     this.parceiro.receba(resposta);
+
+                }else if (comunicado instanceof PedidoDeCheckinCompeticao){
+                    PedidoDeCheckinCompeticao pedido = (PedidoDeCheckinCompeticao) comunicado;
+                    Resposta resposta = this.competicaoDAO.realizarCheckinCompeticao(pedido);
+                    this.parceiro.receba(resposta);
                 }
                 else if (comunicado instanceof PedidoParaSair)
                 {

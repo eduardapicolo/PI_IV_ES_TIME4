@@ -3,7 +3,9 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.InsertOneResult;
+import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
@@ -68,7 +70,7 @@ public class Competicao {
             Document criadorParticipante = new Document()
                     .append("idUsuario", pedido.getIdCriador())
                     .append("apelidoUsuario", nomeUsuario)
-                    .append("checkins", new ArrayList<Document>())
+                    .append("ultimoCheckin", null)
                     .append("sequenciaAtual", 0);
 
             ArrayList<Document> participantes = new ArrayList<>();
@@ -143,7 +145,7 @@ public class Competicao {
             Document novoParticipante = new Document()
                     .append("idUsuario", pedido.getIdUsuario())
                     .append("apelidoUsuario", nomeUsuario)
-                    .append("checkins", new ArrayList<Document>())
+                    .append("ultimoCheckin", null)
                     .append("sequenciaAtual", 0);
 
             participantes.add(novoParticipante);
@@ -194,8 +196,10 @@ public class Competicao {
                         for (Document docP: docsParticipantes) {
                             String idUsarioP = docP.getString("idUsuario");
                             String apelidoP = docP.getString("apelidoUsuario");
+                            Date ultimoCheckinP = docP.getDate("ultimoCheckin");
+                            Integer sequenciaP = docP.getInteger("sequenciaAtual");
 
-                            DocumentoParticipante participante = new DocumentoParticipante(idUsarioP,apelidoP);
+                            DocumentoParticipante participante = new DocumentoParticipante(idUsarioP,apelidoP,ultimoCheckinP,sequenciaP);
                             listaParticipantes.add(participante);
                         }
                     }
@@ -216,6 +220,109 @@ public class Competicao {
             }
         } catch (Exception e) {
             return new RespostaBuscaCompeticao(false, "ERRO NA BUSCA: " + e.getMessage(),null);
+        }
+    }
+
+    public Resposta realizarCheckinCompeticao(PedidoDeCheckinCompeticao pedido) {
+        try {
+            ObjectId idDaCompeticao;
+            try {
+                idDaCompeticao = new ObjectId(pedido.getIdCompeticao());
+                System.out.println("Id da competicao recebido: " + idDaCompeticao.toHexString());
+            } catch (IllegalArgumentException erro) {
+                return new RespostaDeCheckinCompeticao(false, "ID da competição em formato inválido.");
+            }
+
+            Document competicao = this.colecaoCompeticoes.find(Filters.eq("_id", idDaCompeticao)).first();
+
+            if (competicao == null) {
+                return new RespostaDeCheckinCompeticao(false, "Competição não encontrada.");
+            }
+
+            ArrayList<Document> participantes = (ArrayList<Document>) competicao.getList("participantes", Document.class);
+            if (participantes == null || participantes.isEmpty()) {
+                return new RespostaDeCheckinCompeticao(false, "Erro: Competição sem participantes registrados.");
+            }
+
+            for (Document participante : participantes) {
+                if (participante.getString("idUsuario").equals(pedido.getIdUsuario())) {
+
+                    Date dataNoBanco = participante.getDate("ultimoCheckin");
+                    Date dataDoPedido = pedido.getDataCelularAtual();
+                    Integer sequenciaAtual = participante.getInteger("sequenciaAtual");
+
+                    if (sequenciaAtual == null) sequenciaAtual = 0;
+
+                    boolean deveAtualizar = false;
+
+                    if (dataNoBanco == null) {
+
+                        deveAtualizar = true;
+                    } else {
+
+                        if (dataNoBanco.before(dataDoPedido)) {
+                            deveAtualizar = true;
+                        }
+                    }
+
+                    if (deveAtualizar) {
+
+                        Bson filtro = Filters.and(
+                                Filters.eq("_id", idDaCompeticao),
+                                Filters.eq("participantes.idUsuario", pedido.getIdUsuario())
+                        );
+
+                        Bson updateOperation = Updates.combine(
+                                Updates.set("participantes.$.ultimoCheckin", dataDoPedido),
+                                Updates.set("participantes.$.sequenciaAtual", sequenciaAtual + 1)
+                        );
+
+                        UpdateResult result = this.colecaoCompeticoes.updateOne(filtro, updateOperation);
+
+                        if (result.wasAcknowledged() && result.getModifiedCount() > 0) {
+
+                            Document competicaoAtualizadaDocument = this.colecaoCompeticoes.find(
+                                    Filters.eq("_id", idDaCompeticao)
+                            ).first();
+
+                            if (competicaoAtualizadaDocument != null) {
+                                List<Document> listaParticipantesMongo = competicaoAtualizadaDocument.getList("participantes", Document.class);
+                                List<DocumentoParticipante> listaParticipantes = new ArrayList<>();
+
+                                for (Document participanteDoc : listaParticipantesMongo) {
+                                    String idUser = participanteDoc.getString("idUsuario");
+                                    String apelido = participanteDoc.getString("apelidoUsuario");
+                                    Date ultimo = participanteDoc.getDate("ultimoCheckin");
+                                    Integer seq = participanteDoc.getInteger("sequenciaAtual");
+
+                                    DocumentoParticipante documentoParticipante = new DocumentoParticipante(idUser, apelido, ultimo, seq);
+                                    listaParticipantes.add(documentoParticipante);
+                                }
+
+                                DocumentoCompeticao competicaoAtualizada = new DocumentoCompeticao(
+                                        competicaoAtualizadaDocument.getObjectId("_id").toHexString(),
+                                        competicaoAtualizadaDocument.getString("nome"),
+                                        competicaoAtualizadaDocument.getString("codigo"),
+                                        competicaoAtualizadaDocument.getString("idCriador"),
+                                        listaParticipantes
+                                );
+
+                                return new RespostaDeCheckinCompeticao(true, "Check-in registrado com sucesso!", competicaoAtualizada);
+                            }
+                        } else {
+                            return new RespostaDeCheckinCompeticao(false, "Falha técnica ao atualizar o banco de dados.");
+                        }
+                    } else {
+                        return new RespostaDeCheckinCompeticao(false, "Check-in já realizado recentemente ou data inválida.");
+                    }
+                }
+            }
+
+            return new RespostaDeCheckinCompeticao(false, "Usuário não encontrado nesta competição.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new RespostaDeCheckinCompeticao(false, "Erro interno no servidor: " + e.getMessage());
         }
     }
 }

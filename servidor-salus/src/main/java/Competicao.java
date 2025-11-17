@@ -1,13 +1,16 @@
 import br.com.salus.*;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.InsertOneResult;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 
 public class Competicao {
@@ -169,5 +172,50 @@ public class Competicao {
         }
     }
 
-    //TODO: getCompeticoes
+    public Resposta getCompeticoes (PedidoBuscaCompeticao pedido) {
+
+        List<DocumentoCompeticao> listaCompeticoes = new ArrayList<>();
+
+        try {
+            String idUsuario = pedido.getIdUsuario().trim();
+
+            Bson filtro = Filters.eq("participantes.idUsuario", idUsuario);
+            MongoCursor<Document> cursor = this.colecaoCompeticoes.find(filtro).iterator();
+
+            try (cursor) {
+                while (cursor.hasNext()) {
+                    Document doc = cursor.next();
+
+                    List<DocumentoParticipante> listaParticipantes = new ArrayList<>();
+
+                    List<Document> docsParticipantes = doc.getList("participantes",Document.class);
+
+                    if (docsParticipantes != null) {
+                        for (Document docP: docsParticipantes) {
+                            String idUsarioP = docP.getString("idUsuario");
+                            String apelidoP = docP.getString("apelidoUsuario");
+
+                            DocumentoParticipante participante = new DocumentoParticipante(idUsarioP,apelidoP);
+                            listaParticipantes.add(participante);
+                        }
+                    }
+
+                    DocumentoCompeticao competicao = new DocumentoCompeticao(
+                            doc.getObjectId("_id").toHexString(),
+                            doc.getString("nome"),
+                            doc.getString("codigo"),
+                            doc.getString("idCriador"),
+                            listaParticipantes
+
+                    );
+
+                    listaCompeticoes.add(competicao);
+                }
+
+                return new RespostaBuscaCompeticao(true, "Busca concluída com sucesso.",listaCompeticoes);
+            }
+        } catch (Exception e) {
+            return new RespostaBuscaCompeticao(false, "ERRO NA BUSCA: " + e.getMessage(),null);
+        }
+    }
 }

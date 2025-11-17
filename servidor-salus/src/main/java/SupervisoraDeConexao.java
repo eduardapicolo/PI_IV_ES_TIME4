@@ -36,6 +36,7 @@ public class SupervisoraDeConexao extends Thread
         try
         {
             transmissor = new ObjectOutputStream(this.conexao.getOutputStream());
+            transmissor.flush();
             receptor = new ObjectInputStream(this.conexao.getInputStream());
             this.parceiro = new Parceiro (this.conexao, receptor, transmissor);
         }
@@ -114,6 +115,11 @@ public class SupervisoraDeConexao extends Thread
                 {
                     PedidoEntrarCompeticao pedido = (PedidoEntrarCompeticao) comunicado;
                     Resposta resposta = this.competicaoDAO.entrarNaCompeticao(pedido);
+                    this.parceiro.receba(resposta);
+                }else if (comunicado instanceof PedidoBuscaCompeticao)
+                {
+                    PedidoBuscaCompeticao pedido = (PedidoBuscaCompeticao) comunicado;
+                    Resposta resposta = this.competicaoDAO.getCompeticoes(pedido);
                     this.parceiro.receba(resposta);
                 }
                 else if (comunicado instanceof PedidoParaSair)

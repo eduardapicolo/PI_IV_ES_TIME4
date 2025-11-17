@@ -8,7 +8,7 @@ import java.util.Date
 
 object NetworkManager {
 
-    private const val HOST = "192.168.15.68"
+    private const val HOST = "10.0.2.2"
     private const val PORTA = 3000
 
     private var cliente: ClienteSocket? = null
@@ -271,6 +271,39 @@ object NetworkManager {
         } catch (e: Exception) {
             Log.e(TAG, "entrarNaCompeticao: Erro", e)
             RespostaEntrarCompeticao(false, "Erro ao entrar na competição: ${e.message}", null, null)
+        }
+    }
+
+    suspend fun buscarCompeticoes(userId: String): RespostaBuscaCompeticao {
+        return try {
+            val pedido = PedidoBuscaCompeticao(userId)
+            val resposta = enviarRequisicao(pedido)
+
+            when (resposta) {
+                is RespostaBuscaCompeticao -> resposta
+                is Resposta -> RespostaBuscaCompeticao(false, resposta.mensagem, null)
+                else -> RespostaBuscaCompeticao(false, "Resposta inesperada.", null)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "buscarCompeticoes: Erro", e)
+            RespostaBuscaCompeticao(false, "Erro ao buscar competições: ${e.message}", null)
+        }
+    }
+
+    suspend fun realizarCheckinCompeticao(idCompeticao: String, idUsuario: String): RespostaDeCheckinCompeticao {
+        return try {
+            // Usamos Date() para pegar a data atual do celular
+            val pedido = PedidoDeCheckinCompeticao(idCompeticao, idUsuario, Date())
+            val resposta = enviarRequisicao(pedido)
+
+            when (resposta) {
+                is RespostaDeCheckinCompeticao -> resposta
+                is Resposta -> RespostaDeCheckinCompeticao(false, resposta.mensagem, null)
+                else -> RespostaDeCheckinCompeticao(false, "Resposta inesperada.", null)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "realizarCheckinCompeticao: Erro", e)
+            RespostaDeCheckinCompeticao(false, "Erro ao fazer check-in na competição: ${e.message}", null)
         }
     }
 }

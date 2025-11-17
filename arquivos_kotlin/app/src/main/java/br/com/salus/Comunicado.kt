@@ -60,6 +60,12 @@ class PedidoDeCheckin(val idHabito: String) : Comunicado() {
     }
 }
 
+class PedidoDeCheckinCompeticao(val idCompeticao: String,val idUsuario : String, val dataCelularAtual : Date) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 76L
+    }
+}
+
 class PedidoDeNovaCompeticao(
     val nome: String,
     val idCriador: String
@@ -158,6 +164,22 @@ class RespostaDeCheckin : Resposta {
     }
 }
 
+class RespostaDeCheckinCompeticao : Resposta {
+    val competicaoAtualizada: DocumentoCompeticao?
+
+    constructor(sucesso: Boolean, msg: String, competicaoAtualizada: DocumentoCompeticao?) : super(sucesso, msg) {
+        this.competicaoAtualizada = competicaoAtualizada
+    }
+
+    constructor(sucesso: Boolean, msg: String) : super(sucesso, msg) {
+        this.competicaoAtualizada = null
+    }
+
+    companion object {
+        private const val serialVersionUID = 77L
+    }
+}
+
 class RespostaDeNovaCompeticao : Resposta {
     val idCompeticao: String?
     val codigo: String?
@@ -225,7 +247,9 @@ class DocumentoHabito(
 
 class DocumentoParticipante(
     val idUsuario: String,
-    val apelidoUsuario: String
+    val apelidoUsuario: String,
+    val ultimoCheckin: Date?,
+    val sequencia: Int?
 ) : Serializable {
     companion object {
         private const val serialVersionUID = 20L

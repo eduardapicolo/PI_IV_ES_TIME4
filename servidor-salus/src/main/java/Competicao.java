@@ -10,10 +10,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class Competicao {
     MongoCollection<Document> colecaoCompeticoes;
@@ -223,6 +220,23 @@ public class Competicao {
         }
     }
 
+    private boolean isMesmoDia(Date data1, Date data2) {
+        if (data1 == null || data2 == null) {
+            return false;
+        }
+
+        Calendar cal1 = Calendar.getInstance();
+        cal1.setTime(data1);
+
+        Calendar cal2 = Calendar.getInstance();
+        cal2.setTime(data2);
+
+        // Compara APENAS o Ano e o Dia do Ano (ex: dia 200 de 2025)
+        return (cal1.get(Calendar.ERA) == cal2.get(Calendar.ERA) &&
+                cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR));
+    }
+
     public Resposta realizarCheckinCompeticao(PedidoDeCheckinCompeticao pedido) {
         try {
             ObjectId idDaCompeticao;
@@ -260,8 +274,14 @@ public class Competicao {
                         deveAtualizar = true;
                     } else {
 
-                        if (dataNoBanco.before(dataDoPedido)) {
+                        if (isMesmoDia(dataNoBanco,dataDoPedido)) {
+                            return new RespostaDeCheckinCompeticao(false, "Você já realizou o check-in hoje!");
+                        }
+
+                        if (dataDoPedido.after(dataNoBanco)) {
                             deveAtualizar = true;
+                        } else {
+                            return new RespostaDeCheckinCompeticao(false, "Data inválida (anterior ao último check-in).");
                         }
                     }
 

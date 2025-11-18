@@ -136,18 +136,13 @@ public class SupervisoraDeConexao extends Thread
             {
                 String mensagemErro = erro.getMessage() != null ? erro.getMessage().toLowerCase() : "";
 
-                // 1. Verifica se o erro é o encerramento da conexão (esperado no seu protocolo)
                 if (mensagemErro.contains("erro de recepcao") || mensagemErro.contains("connection reset")) {
                     System.err.println("Cliente encerrou a sessão de forma normal.");
                 } else {
-                    // 2. Erros reais de processamento ou I/O
                     System.err.println("Erro fatal ou de processamento: " + erro.getMessage());
                     erro.printStackTrace();
-
-                    // NÃO TENTE ENVIAR RESPOSTA AQUI, pois o erro é de recepção/conexão!
                 }
 
-                // 3. Quebra o loop em qualquer exceção (tratada ou não), encerrando a thread.
                 break;
             }
         }

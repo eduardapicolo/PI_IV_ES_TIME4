@@ -1,6 +1,7 @@
 package br.com.salus
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -117,7 +118,7 @@ fun HomeScreen() {
     }
 }
 
-@Preview(showBackground = true)
+// --- TELA 1: LOGIN ---
 @Composable
 fun MainScreenPreview() {
     SalusTheme {

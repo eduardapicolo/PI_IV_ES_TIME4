@@ -2,4 +2,8 @@
     <string name="app_name">salus</string>
     <string name="title_activity_sign_up">SignUpActivity</string>
     <string name="title_activity_habits">HabitsActivity</string>
+    <string name="title_activity_habitos_screen">HabitosScreen</string>
+    <string name="title_activity_tela_de_testes">TelaDeTestes</string>
+    <string name="title_activity_criar_competicao_screen">CriarCompeticaoScreen</string>
+    <string name="title_activity_entrar_competicao_screen">EntrarCompeticaoScreen</string>
 </resources>

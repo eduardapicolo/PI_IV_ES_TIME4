@@ -13,11 +13,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Salus">
-        <activity
-            android:name=".HabitsActivity"
-            android:exported="false"
-            android:label="@string/title_activity_habits"
-            android:theme="@style/Theme.Salus" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -25,24 +21,40 @@
             android:theme="@style/Theme.Salus">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".InicialScreenActivity"
             android:exported="false"
             android:label="Tela Inicial"
-            android:theme="@style/Theme.Salus"></activity>
+            android:theme="@style/Theme.Salus" />
+
+        <activity
+            android:name=".SignInActivity"
+            android:exported="false"
+            android:label="Entrar"
+            android:theme="@style/Theme.Salus" />
+
+        <activity
+            android:name=".SignUpActivity"
+            android:exported="false"
+            android:label="Cadastrar"
+            android:theme="@style/Theme.Salus" />
+
         <activity
             android:name=".CompetitionConfigActivity"
             android:exported="false"
             android:label="Conffigurações de Competição"
-            android:theme="@style/Theme.Salus"></activity>
+            android:theme="@style/Theme.Salus" />
+
         <activity
             android:name=".EachCompetitionActivity"
             android:exported="false"
+            android:label="Detalhes da Competição"
             android:theme="@style/Theme.Salus" />
+
     </application>
 
 </manifest>

@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable("home") {
-                            MainAppScreen()
+                            InicialScreen()
                         }
                     }
                 }

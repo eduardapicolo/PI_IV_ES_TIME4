@@ -1,5 +1,8 @@
 package br.com.salus
+
+import androidx.media3.ui.AspectRatioFrameLayout
 import android.net.Uri
+import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -17,6 +20,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 
+@OptIn(UnstableApi::class)
 @Composable
 fun SplashScreenVideo(onVideoEnded: () -> Unit) {
     val context = LocalContext.current
@@ -69,6 +73,7 @@ fun SplashScreenVideo(onVideoEnded: () -> Unit) {
             PlayerView(it).apply {
                 player = exoPlayer
                 useController = false // Esconde os controles de play/pause
+                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
             }
         },
         modifier = Modifier.fillMaxSize())

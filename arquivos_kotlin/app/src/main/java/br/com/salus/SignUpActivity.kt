@@ -4,6 +4,7 @@ package br.com.salus
 
 import android.app.Activity
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -24,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +64,7 @@ import br.com.salus.PasswordRequirement
 import br.com.salus.isEmailValid
 import br.com.salus.ProfilePictureDialog
 import br.com.salus.getProfilePictureResourceId
+import kotlinx.coroutines.launch
 
 class SignUpActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -125,7 +129,7 @@ fun UserDataScreen(navController: NavController) {
     val isFormValid by remember {
         derivedStateOf {
             name.isNotBlank() &&
-                    isEmailValid(email) && // Agora encontra esta função
+                    isEmailValid(email) &&
                     hasMinLength && hasLowercase && hasUppercase && hasNumber && hasSpecialCharacter &&
                     password == confirmedPassword
         }
@@ -187,31 +191,31 @@ fun UserDataScreen(navController: NavController) {
                     .fillMaxWidth()
                     .padding(horizontal = 32.dp),
             ) {
-                InputBox(name, { newName -> name = newName}, "Nome") // Agora encontra
+                InputBox(name, { newName -> name = newName}, "Nome")
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                InputBox(email, { newEmail -> email = newEmail}, "E-mail") // Agora encontra
+                InputBox(email, { newEmail -> email = newEmail}, "E-mail")
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                PasswordInputBox(password, { newPassword -> password = newPassword}, "Senha") // Agora encontra
+                PasswordInputBox(password, { newPassword -> password = newPassword}, "Senha")
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 if (password != "") {
                     Column(modifier = Modifier.padding(start = 4.dp)) {
-                        PasswordRequirement("Mínimo de 8 caracteres", hasMinLength) // Agora encontra
-                        PasswordRequirement("1 letra minúscula (a-z)", hasLowercase) // Agora encontra
-                        PasswordRequirement("1 letra maiúscula (A-Z)", hasUppercase) // Agora encontra
-                        PasswordRequirement("1 número (0-9)", hasNumber) // Agora encontra
-                        PasswordRequirement("1 caractere especial (!@#$%)", hasSpecialCharacter) // Agora encontra
+                        PasswordRequirement("Mínimo de 8 caracteres", hasMinLength)
+                        PasswordRequirement("1 letra minúscula (a-z)", hasLowercase)
+                        PasswordRequirement("1 letra maiúscula (A-Z)", hasUppercase)
+                        PasswordRequirement("1 número (0-9)", hasNumber)
+                        PasswordRequirement("1 caractere especial (!@#$%)", hasSpecialCharacter)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                PasswordInputBox(confirmedPassword, { newConfirmedPassword -> confirmedPassword = newConfirmedPassword}, "Confirmar senha") // Agora encontra
+                PasswordInputBox(confirmedPassword, { newConfirmedPassword -> confirmedPassword = newConfirmedPassword}, "Confirmar senha")
             }
 
             Spacer(Modifier.weight(1f))
@@ -257,8 +261,12 @@ fun UserProfileScreen(navController: NavController, name: String, email: String,
 
     var showDialog by remember { mutableStateOf(false) }
 
+    var coroutineScope = rememberCoroutineScope()
+    var context = LocalContext.current
+    var isCreatingAccount by remember { mutableStateOf(false) }
+
     if (showDialog) {
-        ProfilePictureDialog( // Agora encontra
+        ProfilePictureDialog(
             onDismiss = {showDialog = false},
             onPictureSelected = { id ->
                 profilePicture = id
@@ -338,7 +346,7 @@ fun UserProfileScreen(navController: NavController, name: String, email: String,
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = getProfilePictureResourceId(profilePicture)), // Agora encontra
+                    painter = painterResource(id = getProfilePictureResourceId(profilePicture)),
                     contentDescription = "Foto de perfil",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -366,14 +374,38 @@ fun UserProfileScreen(navController: NavController, name: String, email: String,
                     .fillMaxWidth()
                     .padding(horizontal = 32.dp)
             ) {
-                InputBox(username, { newUsername -> username = newUsername}, "Seu apelido") // Agora encontra
+                InputBox(username, { newUsername -> username = newUsername}, "Seu apelido")
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
-                onClick = { /*TODO: SALVAR AS INFOS DO USUARIO NO BANCO*/ },
-                enabled = username.isNotBlank(),
+                onClick = {
+                    isCreatingAccount = true
+
+                    coroutineScope.launch {
+                        val resposta = NetworkManager.userSignUp(
+                            nome = name,
+                            email = email,
+                            senha = password,
+                            apelido = username,
+                            idFotoPerfil = profilePicture
+                        )
+
+                        if (resposta.sucesso) {
+                            Toast.makeText(context, "Conta criada com sucesso!", Toast.LENGTH_SHORT).show()
+                            isCreatingAccount = false
+                            mudarTelaFinish(context, MainActivity::class.java)
+                        }
+                        else {
+                            Toast.makeText(context, resposta.mensagem, Toast.LENGTH_SHORT).show()
+                            isCreatingAccount = false
+                        }
+                        isCreatingAccount = false
+                    }
+
+                },
+                enabled = username.isNotBlank() && !isCreatingAccount,
                 shape = RoundedCornerShape(50),
                 modifier = Modifier
                     .fillMaxWidth()

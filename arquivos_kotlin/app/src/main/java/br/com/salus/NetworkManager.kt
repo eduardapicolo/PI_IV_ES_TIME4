@@ -8,7 +8,7 @@ import java.util.Date
 
 object NetworkManager {
 
-    private const val HOST = "10.0.2.2"
+    private const val HOST = "192.168.15.68"
     private const val PORTA = 3000
 
     private var cliente: ClienteSocket? = null

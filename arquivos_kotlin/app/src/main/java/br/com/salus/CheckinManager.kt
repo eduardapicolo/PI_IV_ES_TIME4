@@ -49,25 +49,20 @@ fun main() {
 
     val userId = "user1"
 
-    // Day 1
     manager.checkIn(userId)
 
-    // Day 2
     simulateNextDay()
     manager.checkIn(userId)
 
-    // Day 3 - skipped
     simulateNextDay()
     println("Skipping check-in for $userId")
 
-    // Day 4
     simulateNextDay()
     manager.checkIn(userId)
 
     println("Final consecutive days for $userId: ${manager.getConsecutiveDays(userId)}")
 }
 
-// Função simulando passagem de dias (apenas para demo)
 var simulatedDate: LocalDate? = null
 fun simulateNextDay() {
     simulatedDate = (simulatedDate ?: LocalDate.now()).plusDays(1)

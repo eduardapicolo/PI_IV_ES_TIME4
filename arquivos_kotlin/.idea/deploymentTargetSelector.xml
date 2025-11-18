@@ -5,16 +5,16 @@
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="CompetitionCardPreview">
+      <SelectionState runConfigName="CreateDialogPreview - Dialog de Criação">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="CompeticoesActivity">
+      <SelectionState runConfigName="MainAppScreenPreview">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="CompeticoesActivity (1)">
+      <SelectionState runConfigName="PreviewSignInScreen">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="CompetitionsActivity">
+      <SelectionState runConfigName="EachCompetitionScreenPreview">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

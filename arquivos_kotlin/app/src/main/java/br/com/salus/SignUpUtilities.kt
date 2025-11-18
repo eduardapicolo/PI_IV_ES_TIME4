@@ -50,20 +50,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 
-/* UserDataScreen */
-
 @Composable
-fun InputBox(variavel: String, onValueChange: (String) -> Unit, text: String){
+fun InputBox(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    keyboardType: KeyboardType = KeyboardType.Text
+) {
     TextField(
-        value = variavel,
+        value = value,
         onValueChange = onValueChange,
         label = {
             Text(
-                text = text,
+                text = label,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurface
             )
         },
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         colors = TextFieldDefaults.colors(
@@ -77,15 +82,19 @@ fun InputBox(variavel: String, onValueChange: (String) -> Unit, text: String){
 }
 
 @Composable
-fun PasswordInputBox(variavel: String, onValueChange: (String) -> Unit, text: String){
+fun PasswordInputBox(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String
+) {
     var isPasswordVisible by remember { mutableStateOf(false) }
 
     TextField(
-        value = variavel,
+        value = value,
         onValueChange = onValueChange,
         label = {
             Text(
-                text = text,
+                text = label,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurface
             )

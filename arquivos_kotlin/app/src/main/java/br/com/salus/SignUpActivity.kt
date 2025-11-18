@@ -53,6 +53,15 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import br.com.salus.ui.theme.SalusTheme
 
+// --- CORREÇÃO: Imports do SignUpUtilities.kt ---
+// Adicionamos estas linhas para que o arquivo encontre as funções
+import br.com.salus.InputBox
+import br.com.salus.PasswordInputBox
+import br.com.salus.PasswordRequirement
+import br.com.salus.isEmailValid
+import br.com.salus.ProfilePictureDialog
+import br.com.salus.getProfilePictureResourceId
+
 class SignUpActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,9 +125,9 @@ fun UserDataScreen(navController: NavController) {
     val isFormValid by remember {
         derivedStateOf {
             name.isNotBlank() &&
-            isEmailValid(email) &&
-            hasMinLength && hasLowercase && hasUppercase && hasNumber && hasSpecialCharacter &&
-            password == confirmedPassword
+                    isEmailValid(email) && // Agora encontra esta função
+                    hasMinLength && hasLowercase && hasUppercase && hasNumber && hasSpecialCharacter &&
+                    password == confirmedPassword
         }
     }
 
@@ -178,31 +187,31 @@ fun UserDataScreen(navController: NavController) {
                     .fillMaxWidth()
                     .padding(horizontal = 32.dp),
             ) {
-                InputBox(name, { newName -> name = newName}, "Nome")
+                InputBox(name, { newName -> name = newName}, "Nome") // Agora encontra
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                InputBox(email, { newEmail -> email = newEmail}, "E-mail")
+                InputBox(email, { newEmail -> email = newEmail}, "E-mail") // Agora encontra
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                PasswordInputBox(password, { newPassword -> password = newPassword}, "Senha")
+                PasswordInputBox(password, { newPassword -> password = newPassword}, "Senha") // Agora encontra
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 if (password != "") {
                     Column(modifier = Modifier.padding(start = 4.dp)) {
-                        PasswordRequirement("Mínimo de 8 caracteres", hasMinLength)
-                        PasswordRequirement("1 letra minúscula (a-z)", hasLowercase)
-                        PasswordRequirement("1 letra maiúscula (A-Z)", hasUppercase)
-                        PasswordRequirement("1 número (0-9)", hasNumber)
-                        PasswordRequirement("1 caractere especial (!@#$%)", hasSpecialCharacter)
+                        PasswordRequirement("Mínimo de 8 caracteres", hasMinLength) // Agora encontra
+                        PasswordRequirement("1 letra minúscula (a-z)", hasLowercase) // Agora encontra
+                        PasswordRequirement("1 letra maiúscula (A-Z)", hasUppercase) // Agora encontra
+                        PasswordRequirement("1 número (0-9)", hasNumber) // Agora encontra
+                        PasswordRequirement("1 caractere especial (!@#$%)", hasSpecialCharacter) // Agora encontra
                     }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                PasswordInputBox(confirmedPassword, { newConfirmedPassword -> confirmedPassword = newConfirmedPassword}, "Confirmar senha")
+                PasswordInputBox(confirmedPassword, { newConfirmedPassword -> confirmedPassword = newConfirmedPassword}, "Confirmar senha") // Agora encontra
             }
 
             Spacer(Modifier.weight(1f))
@@ -249,7 +258,7 @@ fun UserProfileScreen(navController: NavController, name: String, email: String,
     var showDialog by remember { mutableStateOf(false) }
 
     if (showDialog) {
-        ProfilePictureDialog(
+        ProfilePictureDialog( // Agora encontra
             onDismiss = {showDialog = false},
             onPictureSelected = { id ->
                 profilePicture = id
@@ -329,7 +338,7 @@ fun UserProfileScreen(navController: NavController, name: String, email: String,
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = getProfilePictureResourceId(profilePicture)),
+                    painter = painterResource(id = getProfilePictureResourceId(profilePicture)), // Agora encontra
                     contentDescription = "Foto de perfil",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -357,7 +366,7 @@ fun UserProfileScreen(navController: NavController, name: String, email: String,
                     .fillMaxWidth()
                     .padding(horizontal = 32.dp)
             ) {
-                InputBox(username, { newUsername -> username = newUsername}, "Seu apelido")
+                InputBox(username, { newUsername -> username = newUsername}, "Seu apelido") // Agora encontra
             }
 
             Spacer(modifier = Modifier.weight(1f))

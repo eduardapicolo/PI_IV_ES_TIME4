@@ -45,6 +45,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.salus.ui.theme.SalusTheme
 import android.content.Intent
+// --- CORREÇÃO AQUI ---
+// Importa as funções "oficiais" do seu arquivo de utilitários
+import br.com.salus.InputBox
+import br.com.salus.PasswordInputBox
+
 class SignInActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -163,9 +168,9 @@ fun SignInScreen() {
 
                     Button(
                         onClick = {
-                            val intent = Intent(context, HabitsActivity::class.java)
+                            val intent = Intent(context, MainActivity::class.java)
                             context.startActivity(intent)
-                                  },
+                        },
                         enabled = isFormValid,
                         shape = RoundedCornerShape(50),
                         modifier = Modifier
@@ -193,71 +198,8 @@ fun SignInScreen() {
 }
 
 
-
-
 @Composable
-fun InputBox(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    keyboardType: KeyboardType = KeyboardType.Text
-) {
-    TextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-        colors = TextFieldDefaults.colors(
-            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            cursorColor = MaterialTheme.colorScheme.primary
-        )
-    )
-}
-
-@Composable
-fun PasswordInputBox(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String
-) {
-    var passwordVisibility by remember { mutableStateOf(false) }
-
-    val icon = if (passwordVisibility)
-        Icons.Filled.Visibility
-    else
-        Icons.Filled.VisibilityOff
-
-    TextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        singleLine = true,
-        visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        modifier = Modifier.fillMaxWidth(),
-        colors = TextFieldDefaults.colors(
-            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            cursorColor = MaterialTheme.colorScheme.primary
-        ),
-        trailingIcon = {
-            IconButton(onClick = { passwordVisibility = !passwordVisibility }) {
-                Icon(imageVector = icon, contentDescription = "Mostar senha")
-            }
-        }
-    )
-}
-
-
 @Preview
-@Composable
 fun PreviewSignInScreen() {
     SalusTheme {
         SignInScreen()

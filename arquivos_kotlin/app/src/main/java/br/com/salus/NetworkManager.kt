@@ -206,6 +206,18 @@ object NetworkManager {
         }
     }
 
+    suspend fun excluirHabito(habitId: String, userId: String): Resposta {
+        return try {
+            val pedido = PedidoExcluirHabito(habitId, userId)
+            val resposta = enviarRequisicao(pedido)
+
+            resposta as? Resposta ?: Resposta(false, "Resposta inesperada.")
+        } catch (e: Exception) {
+            Log.e(TAG, "excluirHabito: Erro", e)
+            Resposta(false, "Erro ao excluir hábito: ${e.message}")
+        }
+    }
+
     suspend fun realizarCheckin(habitoId: String): RespostaDeCheckin {
         return try {
             val pedido = PedidoDeCheckin(habitoId)

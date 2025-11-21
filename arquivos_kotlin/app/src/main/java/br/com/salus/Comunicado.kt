@@ -92,6 +92,15 @@ class PedidoBuscaCompeticao(
     }
 }
 
+class PedidoExcluirHabito(
+    val idHabito: String,
+    val idUsuario: String
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 22L
+    }
+}
+
 class PedidoParaSair : Comunicado() {
     companion object {
         private const val serialVersionUID = 4L

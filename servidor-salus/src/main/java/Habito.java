@@ -4,6 +4,7 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
@@ -191,6 +192,34 @@ public class Habito {
             System.err.println("--- ERRO GERAL no realizarCheckin ---");
             e.printStackTrace();
             return new RespostaDeCheckin(false, "Erro interno no servidor: " + e.getMessage());
+        }
+    }
+
+    public Resposta excluirHabito(PedidoExcluirHabito pedido) {
+        try {
+            ObjectId objectIdHabito;
+            try {
+                objectIdHabito = new ObjectId(pedido.getIdHabito());
+            } catch (IllegalArgumentException e) {
+                return new Resposta(false, "ID do hábito inválido.");
+            }
+
+            var filtro = Filters.and(
+                    Filters.eq("_id", objectIdHabito),
+                    Filters.eq("idUsuario", pedido.getIdUsuario().trim())
+            );
+
+            DeleteResult resultado = this.colecaoHabitos.deleteOne(filtro);
+
+            if (resultado.getDeletedCount() > 0) {
+                return new Resposta(true, "Hábito excluído com sucesso.");
+            } else {
+                return new Resposta(false, "Hábito não encontrado ou você não tem permissão para excluí-lo.");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Resposta(false, "Erro interno ao excluir hábito: " + e.getMessage());
         }
     }
 }

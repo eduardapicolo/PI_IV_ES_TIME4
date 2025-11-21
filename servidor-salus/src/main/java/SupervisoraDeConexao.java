@@ -127,6 +127,12 @@ public class SupervisoraDeConexao extends Thread
                     Resposta resposta = this.competicaoDAO.realizarCheckinCompeticao(pedido);
                     this.parceiro.receba(resposta);
                 }
+                else if (comunicado instanceof PedidoExcluirHabito)
+                {
+                    PedidoExcluirHabito pedido = (PedidoExcluirHabito) comunicado;
+                    Resposta resposta = this.habitoDAO.excluirHabito(pedido);
+                    this.parceiro.receba(resposta);
+                }
                 else if (comunicado instanceof PedidoParaSair)
                 {
                     break;

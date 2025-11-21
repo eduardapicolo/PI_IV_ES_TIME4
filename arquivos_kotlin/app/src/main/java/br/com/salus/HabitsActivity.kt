@@ -45,19 +45,29 @@ fun HabitsContent() {
         Image(
             painter = painterResource(R.drawable.empty_pile),
             contentDescription = "Vazio",
-            modifier = Modifier.size(300.dp)
+            modifier = Modifier
+                .width(500.dp)
+                .offset(y = (-100).dp)
         )
-        Spacer(Modifier.height(1.dp))
 
-        Text(
-            text = "Está muito vazio aqui...",
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Text(
-            text = "Adicione um novo hábito.",
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable { /* Ação de clicar no texto para adicionar */ }
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.offset(y = (-150).dp)
+        ) {
+            Text(
+                text = "Está muito vazio aqui...",
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Adicione um novo hábito.",
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable { /* Ação de clicar */ }
+            )
+        }
     }
 }
 

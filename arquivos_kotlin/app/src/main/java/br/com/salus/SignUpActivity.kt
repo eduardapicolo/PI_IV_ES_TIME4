@@ -395,7 +395,7 @@ fun UserProfileScreen(navController: NavController, name: String, email: String,
                         if (resposta.sucesso) {
                             Toast.makeText(context, "Conta criada com sucesso!", Toast.LENGTH_SHORT).show()
                             isCreatingAccount = false
-                            mudarTelaFinish(context, MainActivity::class.java)
+                            mudarTelaFinish(context, MainAppScreen::class.java,resposta.userId)
                         }
                         else {
                             Toast.makeText(context, resposta.mensagem, Toast.LENGTH_SHORT).show()

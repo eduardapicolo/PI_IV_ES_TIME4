@@ -8,7 +8,7 @@ import java.util.Date
 
 object NetworkManager {
 
-    private const val HOST = "192.168.15.68"
+    private const val HOST = "10.0.2.2"
     private const val PORTA = 3000
 
     private var cliente: ClienteSocket? = null
@@ -142,11 +142,11 @@ object NetworkManager {
         senha: String,
         apelido: String,
         idFotoPerfil: Int
-    ): Resposta {
+    ): RespostaPedidoDeCadastro {
         return try {
             conectar()
             if (!isConectado()){
-                return Resposta(false, "Não foi possível conectar ao servidor.")
+                return RespostaPedidoDeCadastro(false, "Não foi possível conectar ao servidor.")
             }
 
             val pedido = PedidoDeCadastro(
@@ -158,15 +158,15 @@ object NetworkManager {
                 dataHoraCriacao = Date()
             )
 
-            val resposta = enviarRequisicao(pedido) as? Resposta
-                ?: Resposta(false, "Resposta inesperada.")
+            val resposta = enviarRequisicao(pedido) as? RespostaPedidoDeCadastro
+                ?: RespostaPedidoDeCadastro (false, "Resposta inesperada.")
 
             desconectar()
             resposta
         } catch (e: Exception) {
             Log.e(TAG, "userSignUp: Erro", e)
             desconectar()
-            Resposta(false, "Erro ao cadastrar: ${e.message}")
+            RespostaPedidoDeCadastro (false, "Erro ao cadastrar: ${e.message}")
         }
     }
 

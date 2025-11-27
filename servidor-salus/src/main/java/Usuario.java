@@ -59,7 +59,17 @@ public class Usuario {
 
             InsertOneResult result = this.colecaoUsuarios.insertOne(documentoUsuario);
 
-            return new Resposta(true,"usuario cadastrado com sucesso");
+            Document usuarioExistente = this.colecaoUsuarios.find(
+                    Filters.eq("email", pedido.getEmail())
+            ).first();
+
+            if (usuarioExistente != null) {
+                String userId = usuarioExistente.getObjectId("_id").toHexString();
+                return new RespostaPedidoDeCadastro(true,"usuario cadastrado com sucesso",userId);
+            }
+
+            return new RespostaPedidoDeCadastro(false, "Não foi possivel criar uma conta");
+
 
         } catch (Exception e) {
             return new Resposta(false,"erro no interno no servidor " + e.getMessage() );

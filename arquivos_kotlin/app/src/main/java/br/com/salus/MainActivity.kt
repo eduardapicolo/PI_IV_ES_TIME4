@@ -2,33 +2,23 @@
 
 package br.com.salus
 
-// Import da sua Splash Screen (garanta que o arquivo existe)
-import br.com.salus.SplashScreenVideo
-
-// Imports das "páginas" que vamos "puxar"
-import br.com.salus.CompetitionsContent
-import br.com.salus.CompetitionsFabContent
-import br.com.salus.HabitsContent
-import br.com.salus.HabitsFabContent
-
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -74,134 +64,104 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-//@Composable
-//fun SplashScreenVideo(onVideoEnded: () -> Unit) {
-//    LaunchedEffect(Unit) {
-//        kotlinx.coroutines.delay(1000)
-//        onVideoEnded()
- //   }
-//   Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
- //       Text("Sua Animação/Vídeo de Splash aqui", style = MaterialTheme.typography.headlineSmall)
- //   }
-//}
-
-
-sealed class Screen(val route: String, val iconVector: ImageVector, val label: String) {
-    object Habits : Screen("habits", Icons.Default.Home, "Meus Hábitos")
-    object Competitions : Screen("competitions", Icons.Default.Star, "Competições")
-}
-
-val navItems = listOf(
-    Screen.Habits,
-    Screen.Competitions,
-)
-
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainAppScreen() {
-    var selectedScreen by remember { mutableStateOf(Screen.Habits.route) }
+fun InicialScreen() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        var context = LocalContext.current
 
-    val currentTitle = if (selectedScreen == Screen.Habits.route) "Meus Hábitos" else "Competições"
+        Image(
+            painter = painterResource(id = R.drawable.photo_inicial_screen),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
 
-    Scaffold(
-        modifier = Modifier.systemBarsPadding(),
-        topBar = { TopBarContent(title = currentTitle) },
-        bottomBar = { BottomBarContent(selectedScreen) { selectedScreen = it } },
-        floatingActionButton = {
-            if (selectedScreen == Screen.Habits.route) {
-                HabitsFabContent()
-            } else {
-                CompetitionsFabContent()
-            }
-        }
-    ) { paddingValues ->
+        //feito para escurecer um pouco o fundo
         Box(
             modifier = Modifier
-                .padding(paddingValues)
                 .fillMaxSize()
-        ) {
-            when (selectedScreen) {
-                Screen.Habits.route -> HabitsContent()
-                Screen.Competitions.route -> CompetitionsContent()
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBarContent(title: String) {
-    CenterAlignedTopAppBar(
-        title = { Text(title, fontWeight = FontWeight.Bold) },
-        navigationIcon = {
-            IconButton(onClick = { /* Ação de perfil */ }) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Perfil",
-                    modifier = Modifier.size(36.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        },
-        actions = {
-            IconButton(onClick = { /* Ação de configurações */ }) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Configurações",
-                    modifier = Modifier.size(36.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        },
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            titleContentColor = MaterialTheme.colorScheme.onBackground
+                .background(Color.Black.copy(alpha = 0.5f))
         )
-    )
-}
 
-@Composable
-fun BottomBarContent(
-    selectedRoute: String,
-    onItemSelected: (String) -> Unit
-) {
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.background
-    ) {
-        navItems.forEach { screen ->
-            val isSelected = selectedRoute == screen.route
-            NavigationBarItem(
-                selected = isSelected,
-                onClick = { onItemSelected(screen.route) },
-                label = {
-                    Text(
-                        screen.label,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                    )
-                },
-                icon = {
-                    Icon(
-                        imageVector = screen.iconVector,
-                        contentDescription = screen.label
-                    )
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    unselectedIconColor = Color.Gray,
-                    unselectedTextColor = Color.Gray,
-                    indicatorColor = MaterialTheme.colorScheme.background
-                )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp, vertical = 15.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+
+            Spacer(modifier = Modifier.height(5.dp))
+
+            Image(
+                painter = painterResource(id = R.drawable.salus_white),
+                contentDescription = "Logo Salus",
+                modifier = Modifier
+                    .width(300.dp)
+                    .offset(y = (-50).dp)
             )
+
+            Text(
+                text = "Para quem está cansado de recomeçar.",
+                color = Color.White,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.offset(y = (-130).dp)
+            )
+
+            Text(
+                text = "Seu app para cultivar hábitos de bem-estar.",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.offset(y = (-110).dp)
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Button(
+                onClick = { mudarTela(context, SignUpActivity::class.java) },
+                modifier = Modifier.width(280.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Text(
+                    text = "Criar nova conta",
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { mudarTela(context, SignInActivity::class.java) },
+                modifier = Modifier.width(280.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(
+                    text = "Entrar na conta existente",
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
 
-// --- TELA 1: LOGIN ---
+@Preview(showBackground = true)
 @Composable
-fun MainAppScreenPreview() {
+fun InicialScreenPreview() {
     SalusTheme {
-        MainAppScreen()
+        InicialScreen()
     }
 }

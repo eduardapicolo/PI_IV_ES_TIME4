@@ -45,10 +45,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.salus.ui.theme.SalusTheme
 import android.content.Intent
+import android.util.Log
+import android.widget.Toast
+import androidx.compose.material3.CircularProgressIndicator
 // --- CORREÇÃO AQUI ---
 // Importa as funções "oficiais" do seu arquivo de utilitários
 import br.com.salus.InputBox
 import br.com.salus.PasswordInputBox
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 class SignInActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,8 +72,12 @@ fun SignInScreen() {
     val activity = LocalContext.current as? Activity
     val context = LocalContext.current
 
+    val scope = rememberCoroutineScope()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    var isLoading by remember { mutableStateOf(false) }
 
     val isFormValid by remember {
         derivedStateOf {
@@ -114,8 +123,7 @@ fun SignInScreen() {
                 ) {
                     Image(
                         painter = painterResource(R.drawable.salus_green),
-                        modifier = Modifier
-                            .size(300.dp),
+                        modifier = Modifier.size(300.dp),
                         contentScale = ContentScale.Crop,
                         contentDescription = "Logo Salus"
                     )
@@ -154,24 +162,31 @@ fun SignInScreen() {
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Esqueci minha senha",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 14.sp,
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .clickable { /* Navegar para a tela de recuperação de senha */ }
-                    )
-
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
                         onClick = {
-                            val intent = Intent(context, MainActivity::class.java)
-                            context.startActivity(intent)
+
+                            scope.launch {
+                                isLoading = true
+
+                                val resposta = NetworkManager.userSignIn(email, password)
+
+                                isLoading = false
+
+                                if (resposta.sucesso) {
+                                    Log.d("Login", "Sucesso! ID: ${resposta.userId}")
+
+                                    Toast.makeText(context, "Login realizado com sucesso!", Toast.LENGTH_SHORT).show()
+                                    mudarTelaFinish(context, MainAppScreen::class.java,resposta.userId)
+
+
+                                } else {
+                                    Toast.makeText(context, resposta.mensagem, Toast.LENGTH_LONG).show()
+                                }
+                            }
                         },
-                        enabled = isFormValid,
+                        enabled = isFormValid && !isLoading,
                         shape = RoundedCornerShape(50),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -183,11 +198,18 @@ fun SignInScreen() {
                             disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
                     ) {
-                        Text(
-                            text = "Entrar",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        } else {
+                            Text(
+                                text = "Entrar",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
 
                     Spacer(Modifier.height(32.dp))
@@ -196,7 +218,6 @@ fun SignInScreen() {
         }
     }
 }
-
 
 @Composable
 @Preview

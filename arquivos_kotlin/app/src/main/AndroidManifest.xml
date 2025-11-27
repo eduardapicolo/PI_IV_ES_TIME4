@@ -14,9 +14,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Salus">
         <activity
-            android:name=".TelaTesteHabito"
+            android:name=".MainAppScreen"
             android:exported="false"
-            android:label="@string/title_activity_tela_teste_habito"
+            android:label="@string/title_activity_main_app_screen"
             android:theme="@style/Theme.Salus" />
         <activity
             android:name=".MainActivity"
@@ -29,11 +29,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".InicialScreenActivity"
-            android:exported="false"
-            android:label="Tela Inicial"
-            android:theme="@style/Theme.Salus" />
         <activity
             android:name=".SignInActivity"
             android:exported="false"

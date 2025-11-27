@@ -125,6 +125,22 @@ open class Resposta : Comunicado {
     }
 }
 
+class RespostaPedidoDeCadastro : Resposta {
+    val userId: String?
+
+    constructor(sucesso: Boolean, msg: String, userId: String?): super(sucesso, msg) {
+        this.userId = userId
+    }
+
+    constructor(sucesso: Boolean, msg: String): super(sucesso, msg) {
+        this.userId = null
+    }
+
+    companion object {
+        private const val serialVersionUID = 101L
+    }
+}
+
 class RespostaDeLogin : Resposta {
     val userId: String?
 

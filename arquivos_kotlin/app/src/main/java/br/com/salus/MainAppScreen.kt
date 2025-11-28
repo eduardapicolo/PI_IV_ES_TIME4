@@ -85,22 +85,20 @@ val navItems = listOf(
 fun HomePage(currentUserId: String) {
     var selectedScreen by remember { mutableStateOf(Screen.Habits.route) }
 
-    // Estado para controlar se o Dialog está visível ou não
     var showAddHabitDialog by remember { mutableStateOf(false) }
 
-    // Estado para forçar a lista a recarregar (um contador simples)
+
     var refreshTrigger by remember { mutableStateOf(0) }
 
     val currentTitle = if (selectedScreen == Screen.Habits.route) "Meus Hábitos" else "Competições"
 
-    // Se o estado for verdadeiro, mostra o Dialog que criamos acima
     if (showAddHabitDialog) {
         AddHabitDialog(
             userId = currentUserId,
             onDismiss = { showAddHabitDialog = false },
             onSuccess = {
                 showAddHabitDialog = false
-                refreshTrigger++ // Incrementa para forçar recarregamento
+                refreshTrigger++ 
             }
         )
     }
@@ -126,8 +124,8 @@ fun HomePage(currentUserId: String) {
             when (selectedScreen) {
                 Screen.Habits.route -> HabitsContent(
                     userId = currentUserId,
-                    refreshTrigger = refreshTrigger, // Passamos o gatilho
-                    onAddClick = { showAddHabitDialog = true } // Ação para o texto da tela vazia
+                    refreshTrigger = refreshTrigger, 
+                    onAddClick = { showAddHabitDialog = true } 
                 )
                 Screen.Competitions.route -> CompetitionsContent(currentUserId)
             }

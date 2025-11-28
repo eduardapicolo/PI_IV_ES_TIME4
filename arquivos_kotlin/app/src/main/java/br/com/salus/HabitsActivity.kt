@@ -2,6 +2,7 @@
 
 package br.com.salus
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,11 +28,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.salus.ui.theme.SalusTheme
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 
 @Composable
-fun HabitsFabContent(userId: String) {
+fun HabitsFabContent(onAddClick: () -> Unit) {
     FloatingActionButton(
-        onClick = { /* Navegar para a tela / pop-up de adicionar hábito */ },
+        onClick = onAddClick, // Chama a função que abre o dialog
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary
     ) {
@@ -42,23 +47,27 @@ fun HabitsFabContent(userId: String) {
     }
 }
 
+
+
 @Composable
-fun HabitsContent(userId: String) {
+fun HabitsContent(
+    userId: String,
+    refreshTrigger: Int, // Novo parâmetro
+    onAddClick: () -> Unit // Novo parâmetro para o texto clicável
+) {
 
     var listaDeHabitos by remember { mutableStateOf<List<DocumentoHabito>>(emptyList()) }
-
     var isLoading by remember { mutableStateOf(true) }
 
-
-    LaunchedEffect(key1 = userId) {
+    // O LaunchedEffect agora "vigia" o userId E o refreshTrigger
+    LaunchedEffect(key1 = userId, key2 = refreshTrigger) {
         isLoading = true
-
+        // Pequeno delay opcional para sensação de refresh se for muito rápido, mas não obrigatório
         val resposta = NetworkManager.getHabitos(userId)
 
         if (resposta.sucesso) {
             listaDeHabitos = resposta.habitos ?: emptyList()
         }
-
         isLoading = false
     }
 
@@ -70,8 +79,8 @@ fun HabitsContent(userId: String) {
                 color = MaterialTheme.colorScheme.primary
             )
         }
-
         else if (listaDeHabitos.isEmpty()) {
+            // ... (Seu código de imagem vazia continua igual aqui) ...
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -80,12 +89,11 @@ fun HabitsContent(userId: String) {
             ) {
                 Spacer(modifier = Modifier.height(100.dp))
 
+                // Mantenha a sua Image aqui (R.drawable.empty_pile)...
                 Image(
                     painter = painterResource(R.drawable.empty_pile),
                     contentDescription = "Vazio",
-                    modifier = Modifier
-                        .width(500.dp)
-                        .offset(y = (-100).dp)
+                    modifier = Modifier.width(500.dp).offset(y = (-100).dp)
                 )
 
                 Column(
@@ -104,10 +112,9 @@ fun HabitsContent(userId: String) {
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {
-                            // TODO: Aqui você colocará a navegação para a tela de criar hábito
+                            onAddClick() // AGORA CHAMA O POP-UP
                         }
                     )
-
                 }
             }
         } else {
@@ -195,4 +202,85 @@ fun HabitoItemCard(habito: DocumentoHabito) {
             }
         }
     }
+}
+
+@Composable
+fun AddHabitDialog(
+    userId: String,
+    onDismiss: () -> Unit,
+    onSuccess: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // Variável para guardar o texto digitado
+    var habitName by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = {
+            // Fecha se clicar fora, mas apenas se não estiver carregando
+            if (!isLoading) onDismiss()
+        },
+        title = {
+            Text(text = "Novo Hábito", fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column {
+                Text("Qual hábito gostarias de iniciar?")
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Campo de texto para o nome
+                OutlinedTextField(
+                    value = habitName,
+                    onValueChange = { habitName = it },
+                    label = { Text("Nome do hábito ") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (habitName.isNotBlank()) {
+                        scope.launch {
+                            isLoading = true
+                            // Chama o teu NetworkManager existente
+                            val resposta = NetworkManager.newHabit(habitName, userId)
+
+                            isLoading = false
+
+                            if (resposta.sucesso) {
+                                Toast.makeText(context, "Hábito criado!", Toast.LENGTH_SHORT).show()
+                                onSuccess() // Avisa que deu certo para fechar e atualizar
+                            } else {
+                                Toast.makeText(context, resposta.mensagem, Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } else {
+                        Toast.makeText(context, "Digite um nome para o hábito", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Adicionar")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isLoading
+            ) {
+                Text("Cancelar")
+            }
+        }
+    )
 }

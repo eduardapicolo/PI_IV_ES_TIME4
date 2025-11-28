@@ -2,11 +2,16 @@ package br.com.salus
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -15,7 +20,10 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -23,20 +31,25 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.salus.ui.theme.SalusTheme
+import kotlinx.coroutines.launch
 
 class MainAppScreen : ComponentActivity() {
     private val USER_ID_KEY = "br.com.salus.USER_ID"
@@ -72,7 +85,25 @@ val navItems = listOf(
 fun HomePage(currentUserId: String) {
     var selectedScreen by remember { mutableStateOf(Screen.Habits.route) }
 
+    // Estado para controlar se o Dialog está visível ou não
+    var showAddHabitDialog by remember { mutableStateOf(false) }
+
+    // Estado para forçar a lista a recarregar (um contador simples)
+    var refreshTrigger by remember { mutableStateOf(0) }
+
     val currentTitle = if (selectedScreen == Screen.Habits.route) "Meus Hábitos" else "Competições"
+
+    // Se o estado for verdadeiro, mostra o Dialog que criamos acima
+    if (showAddHabitDialog) {
+        AddHabitDialog(
+            userId = currentUserId,
+            onDismiss = { showAddHabitDialog = false },
+            onSuccess = {
+                showAddHabitDialog = false
+                refreshTrigger++ // Incrementa para forçar recarregamento
+            }
+        )
+    }
 
     Scaffold(
         modifier = Modifier.systemBarsPadding(),
@@ -80,7 +111,8 @@ fun HomePage(currentUserId: String) {
         bottomBar = { BottomBarContent(selectedScreen) { selectedScreen = it } },
         floatingActionButton = {
             if (selectedScreen == Screen.Habits.route) {
-                HabitsFabContent(currentUserId)
+                // Passamos a ação de abrir o dialog para o botão
+                HabitsFabContent(onAddClick = { showAddHabitDialog = true })
             } else {
                 CompetitionsFabContent(currentUserId)
             }
@@ -92,7 +124,11 @@ fun HomePage(currentUserId: String) {
                 .fillMaxSize()
         ) {
             when (selectedScreen) {
-                Screen.Habits.route -> HabitsContent(currentUserId)
+                Screen.Habits.route -> HabitsContent(
+                    userId = currentUserId,
+                    refreshTrigger = refreshTrigger, // Passamos o gatilho
+                    onAddClick = { showAddHabitDialog = true } // Ação para o texto da tela vazia
+                )
                 Screen.Competitions.route -> CompetitionsContent(currentUserId)
             }
         }
@@ -167,4 +203,3 @@ fun BottomBarContent(
         }
     }
 }
-

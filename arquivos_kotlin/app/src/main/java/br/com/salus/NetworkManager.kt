@@ -161,7 +161,13 @@ object NetworkManager {
             val resposta = enviarRequisicao(pedido) as? RespostaPedidoDeCadastro
                 ?: RespostaPedidoDeCadastro (false, "Resposta inesperada.")
 
-            desconectar()
+            if (!resposta.sucesso) {
+                Log.w(TAG, "userSignUp: Cadastro falhou, desconectando...")
+                desconectar()
+            } else {
+                Log.d(TAG, "userSignUp: Cadastro realizado! Mantendo conexão ativa.")
+            }
+
             resposta
         } catch (e: Exception) {
             Log.e(TAG, "userSignUp: Erro", e)

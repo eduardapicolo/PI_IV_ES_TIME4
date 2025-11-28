@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HabitsFabContent(onAddClick: () -> Unit) {
     FloatingActionButton(
-        onClick = onAddClick, // Chama a função que abre o dialog
+        onClick = onAddClick, 
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary
     ) {
@@ -52,17 +52,15 @@ fun HabitsFabContent(onAddClick: () -> Unit) {
 @Composable
 fun HabitsContent(
     userId: String,
-    refreshTrigger: Int, // Novo parâmetro
-    onAddClick: () -> Unit // Novo parâmetro para o texto clicável
+    refreshTrigger: Int, 
+    onAddClick: () -> Unit 
 ) {
 
     var listaDeHabitos by remember { mutableStateOf<List<DocumentoHabito>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // O LaunchedEffect agora "vigia" o userId E o refreshTrigger
     LaunchedEffect(key1 = userId, key2 = refreshTrigger) {
         isLoading = true
-        // Pequeno delay opcional para sensação de refresh se for muito rápido, mas não obrigatório
         val resposta = NetworkManager.getHabitos(userId)
 
         if (resposta.sucesso) {
@@ -80,7 +78,6 @@ fun HabitsContent(
             )
         }
         else if (listaDeHabitos.isEmpty()) {
-            // ... (Seu código de imagem vazia continua igual aqui) ...
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -89,7 +86,6 @@ fun HabitsContent(
             ) {
                 Spacer(modifier = Modifier.height(100.dp))
 
-                // Mantenha a sua Image aqui (R.drawable.empty_pile)...
                 Image(
                     painter = painterResource(R.drawable.empty_pile),
                     contentDescription = "Vazio",
@@ -112,7 +108,7 @@ fun HabitsContent(
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {
-                            onAddClick() // AGORA CHAMA O POP-UP
+                            onAddClick()
                         }
                     )
                 }
@@ -141,7 +137,7 @@ fun HabitoItemCard(habito: DocumentoHabito) {
     val iconRes = if (diasSequencia < 7) {
         R.drawable.empty_pile
     } else {
-        R.drawable.competition_icon3 // ALTERAR PRA FOTO DA PLANTA MAIOR
+        R.drawable.competition_icon3 
     }
 
     Card(
@@ -159,7 +155,7 @@ fun HabitoItemCard(habito: DocumentoHabito) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // LADO ESQUERDO: Textos
+        
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -186,7 +182,6 @@ fun HabitoItemCard(habito: DocumentoHabito) {
                 )
             }
 
-            // LADO DIREITO: Ícone da planta dentro do círculo branco
             Box(
                 modifier = Modifier
                     .size(60.dp)
@@ -213,13 +208,12 @@ fun AddHabitDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Variável para guardar o texto digitado
+
     var habitName by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = {
-            // Fecha se clicar fora, mas apenas se não estiver carregando
             if (!isLoading) onDismiss()
         },
         title = {
@@ -230,7 +224,7 @@ fun AddHabitDialog(
                 Text("Qual hábito gostarias de iniciar?")
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Campo de texto para o nome
+
                 OutlinedTextField(
                     value = habitName,
                     onValueChange = { habitName = it },
@@ -246,14 +240,14 @@ fun AddHabitDialog(
                     if (habitName.isNotBlank()) {
                         scope.launch {
                             isLoading = true
-                            // Chama o teu NetworkManager existente
+
                             val resposta = NetworkManager.newHabit(habitName, userId)
 
                             isLoading = false
 
                             if (resposta.sucesso) {
                                 Toast.makeText(context, "Hábito criado!", Toast.LENGTH_SHORT).show()
-                                onSuccess() // Avisa que deu certo para fechar e atualizar
+                                onSuccess() 
                             } else {
                                 Toast.makeText(context, resposta.mensagem, Toast.LENGTH_LONG).show()
                             }

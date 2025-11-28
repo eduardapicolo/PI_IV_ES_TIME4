@@ -167,7 +167,7 @@ fun CompetitionsContent(userId: String) {
 
             if (resposta.sucesso && resposta.competicoes != null) {
                 competitionsList = resposta.competicoes!!
-                Log.d("CompetitionsContent", "✅ ${competitionsList.size} competições carregadas")
+                Log.d("CompetitionsContent", " ${competitionsList.size} competições carregadas")
 
                 competitionsList.forEachIndexed { index, comp ->
                     Log.d("CompetitionsContent", "  [$index] ID: ${comp.id}, Nome: ${comp.nome}")
@@ -175,12 +175,12 @@ fun CompetitionsContent(userId: String) {
             } else {
                 competitionsList = emptyList()
                 errorMessage = resposta.mensagem
-                Log.w("CompetitionsContent", "⚠️ Falha: ${resposta.mensagem}")
+                Log.w("CompetitionsContent", "⚠Falha: ${resposta.mensagem}")
             }
         } catch (e: Exception) {
             competitionsList = emptyList()
             errorMessage = "Erro ao carregar competições: ${e.message}"
-            Log.e("CompetitionsContent", "❌ Exceção", e)
+            Log.e("CompetitionsContent", " Exceção", e)
         } finally {
             isLoading = false
         }
@@ -371,7 +371,6 @@ fun CompetitionCard(
     val currentStreak = currentParticipant?.sequencia ?: 0
     val canCheckInToday = canCheckInToday(currentParticipant?.ultimoCheckin)
 
-    // Log para debug
     Log.d("CompetitionCard", "Renderizando card:")
     Log.d("CompetitionCard", "  - ID: ${competition.id}")
     Log.d("CompetitionCard", "  - Nome: ${competition.nome}")
@@ -455,7 +454,6 @@ fun CompetitionCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Botão de Check-in
                 Button(
                     onClick = onCheckin,
                     enabled = canCheckInToday,
@@ -476,7 +474,6 @@ fun CompetitionCard(
                     Text(if (canCheckInToday) "Check-in" else "Feito!")
                 }
 
-                // Botão Ver Detalhes
                 OutlinedButton(
                     onClick = {
                         Log.d("CompetitionCard", "📋 Botão Detalhes clicado! ID: ${competition.id}")

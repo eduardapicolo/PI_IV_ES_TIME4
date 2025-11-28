@@ -39,9 +39,6 @@ import androidx.compose.ui.unit.dp
 import br.com.salus.ui.theme.SalusTheme
 
 class MainAppScreen : ComponentActivity() {
-    //A variável val USER_ID_KEY = "br.com.salus.USER_ID" serve como uma chave única para
-    // empacotar (enviar) e desempacotar (receber) dados entre diferentes partes do seu aplicativo Android,
-    // especificamente ao usar objetos Intent
     private val USER_ID_KEY = "br.com.salus.USER_ID"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,7 +82,7 @@ fun HomePage(currentUserId: String) {
             if (selectedScreen == Screen.Habits.route) {
                 HabitsFabContent(currentUserId)
             } else {
-                CompetitionsFabContent()
+                CompetitionsFabContent(currentUserId)
             }
         }
     ) { paddingValues ->
@@ -96,7 +93,7 @@ fun HomePage(currentUserId: String) {
         ) {
             when (selectedScreen) {
                 Screen.Habits.route -> HabitsContent(currentUserId)
-                Screen.Competitions.route -> CompetitionsContent()
+                Screen.Competitions.route -> CompetitionsContent(currentUserId)
             }
         }
     }

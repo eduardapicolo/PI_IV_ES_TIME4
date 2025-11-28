@@ -1,13 +1,12 @@
 package br.com.salus
 
-import androidx.compose.ui.text.style.TextOverflow
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -25,42 +23,39 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.salus.ui.theme.SalusTheme
-import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 
 class EachCompetitionActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_COMPETITION_ID = "COMPETITION_ID"
+        const val EXTRA_USER_ID = "USER_ID"
+        private const val TAG = "EachCompetitionActivity"
     }
-
-    private var competition: Competition? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val competitionId = intent.getStringExtra(EXTRA_COMPETITION_ID)
+        val userId = intent.getStringExtra(EXTRA_USER_ID) ?: ""
 
-        competition = mockCompetitionsList.find { it.id == competitionId }
+        Log.d(TAG, " onCreate - Competition ID: $competitionId, User ID: $userId")
 
-        if (competition == null) {
-            Toast.makeText(this, "Competição não encontrada", Toast.LENGTH_SHORT).show()
+        if (competitionId == null) {
+            Log.e(TAG, " Competition ID é NULL!")
+            Toast.makeText(this, "ID da competição não fornecido", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
         setContent {
             SalusTheme {
-                EachCompetitionScreen(competition = competition)
+                EachCompetitionScreen(competitionId = competitionId, userId = userId)
             }
         }
     }
@@ -68,59 +63,61 @@ class EachCompetitionActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EachCompetitionScreen(competition: Competition?) {
-
+fun EachCompetitionScreen(competitionId: String, userId: String) {
     val context = LocalContext.current as? Activity
 
-    if (competition == null) {
-        SalusTheme {
-            Scaffold { padding ->
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Competição não encontrada", style = MaterialTheme.typography.headlineMedium)
-                }
-            }
-        }
-        return
-    }
+    var competition by remember { mutableStateOf<DocumentoCompeticao?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val sortedParticipants = remember(competition.participants) {
-        competition.participants.sortedByDescending { it.currentStreak }
-    }
+    LaunchedEffect(competitionId) {
+        Log.d("EachCompetitionScreen", "🔍 Buscando competição com ID: $competitionId para User: $userId")
+        isLoading = true
+        errorMessage = null
 
-    val topThree = sortedParticipants.take(3)
-    val remainingParticipants = sortedParticipants.drop(3)
-
-    val daysLeft = remember {
         try {
-            val today = LocalDate.now()
-            val endDate = today.plusDays(competition.durationDays.toLong())
-            ChronoUnit.DAYS.between(today, endDate).coerceAtLeast(0)
+            val resposta = NetworkManager.buscarCompeticoes(userId)
+
+            if (resposta.sucesso && resposta.competicoes != null) {
+                competition = resposta.competicoes!!.find { it.id == competitionId }
+
+                if (competition != null) {
+                    Log.d("EachCompetitionScreen", "✅ Competição encontrada: ${competition!!.nome}")
+                } else {
+                    Log.w("EachCompetitionScreen", "⚠️ Competição não encontrada na lista")
+                    errorMessage = "Competição não encontrada"
+                }
+            } else {
+                Log.w("EachCompetitionScreen", "⚠️ Falha ao buscar competições: ${resposta.mensagem}")
+                errorMessage = resposta.mensagem
+            }
         } catch (e: Exception) {
-            competition.durationDays.toLong()
+            Log.e("EachCompetitionScreen", "❌ Erro ao buscar competição", e)
+            errorMessage = "Erro: ${e.message}"
+        } finally {
+            isLoading = false
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(competition.name) },
+                title = { Text(competition?.nome ?: "Carregando...") },
                 navigationIcon = {
                     IconButton(onClick = { context?.finish() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        Toast.makeText(context, "Abrir tela de Edição", Toast.LENGTH_SHORT).show()
-                        // TODO: Implementar navegação para CompetitionConfigActivity
-                        val intent = Intent(context, CompetitionConfigActivity::class.java).apply {
+                    if (competition != null) {
+                        IconButton(onClick = {
+                            val intent = Intent(context, CompetitionConfigActivity::class.java).apply {
+                                putExtra("COMPETITION_ID", competitionId)
+                            }
+                            context?.startActivity(intent)
+                        }) {
+                            Icon(Icons.Filled.Settings, contentDescription = "Editar Competição")
                         }
-                        context?.startActivity(intent)
-                    }) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Editar Competição")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -129,118 +126,186 @@ fun EachCompetitionScreen(competition: Competition?) {
             )
         }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-            ) {
-                Image(
-                    painter = painterResource(id = getCompetitionIconResourceId(competition.iconId)),
-                    contentDescription = "Ícone da Competição",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                        .padding(8.dp),
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Column(horizontalAlignment = Alignment.Start) {
-                    Text(
-                        text = competition.name,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Sua sequência: ${competition.streak} dias",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.secondary
+            when {
+                isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
-            }
-            Spacer(modifier = Modifier.height(32.dp))
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Detalhes da Duração",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                errorMessage != null -> {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = errorMessage!!,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = { context?.finish() }) {
+                            Text("Voltar")
+                        }
+                    }
+                }
 
-                    DetailRow(
-                        label = "Tempo de Duração:",
-                        value = "${competition.durationDays} dias"
-                    )
-
-                    DetailRow(
-                        label = "Faltam para Acabar:",
-                        value = "$daysLeft dias",
-                        valueColor = if (daysLeft <= 7 && daysLeft > 0) MaterialTheme.colorScheme.error else Color.Unspecified
-                    )
+                competition != null -> {
+                    CompetitionDetailsContent(competition = competition!!)
                 }
             }
-            Spacer(modifier = Modifier.height(32.dp))
-
-            if (topThree.isNotEmpty()) {
-                Text(
-                    text = "Líderes da Sequência",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    textAlign = TextAlign.Start
-                )
-                CompetitionPodium(topParticipants = topThree)
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-
-
-            if (remainingParticipants.isNotEmpty()) {
-                Text(
-                    text = "Outros Participantes",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    textAlign = TextAlign.Start
-                )
-
-                remainingParticipants.forEach { participant ->
-                    ParticipantItem(name = participant.name, currentStreak = participant.currentStreak)
-                }
-            } else if (competition.participants.isEmpty()) {
-                Text(
-                    text = "Nenhum participante ainda",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
-fun CompetitionPodium(topParticipants: List<Participant>) {
+fun CompetitionDetailsContent(competition: DocumentoCompeticao) {
+    val sortedParticipants = remember(competition.participantes) {
+        competition.participantes.sortedByDescending { it.sequencia ?: 0 }
+    }
+
+    val topThree = sortedParticipants.take(3)
+    val remainingParticipants = sortedParticipants.drop(3)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Header da competição
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = competition.nome.firstOrNull()?.uppercase() ?: "?",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(horizontalAlignment = Alignment.Start) {
+                Text(
+                    text = competition.nome,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Código: ${competition.codigo}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Informações",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                DetailRow(
+                    label = "Total de Participantes:",
+                    value = "${competition.participantes.size}"
+                )
+
+                val criadorNome = competition.participantes
+                    .find { it.idUsuario == competition.idCriador }?.apelidoUsuario ?: "Admin"
+
+                DetailRow(
+                    label = "Criador:",
+                    value = criadorNome
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        if (topThree.isNotEmpty()) {
+            Text(
+                text = "Líderes da Sequência",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                textAlign = TextAlign.Start
+            )
+            CompetitionPodiumReal(topParticipants = topThree)
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        if (remainingParticipants.isNotEmpty()) {
+            Text(
+                text = "Outros Participantes",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                textAlign = TextAlign.Start
+            )
+
+            remainingParticipants.forEach { participant ->
+                ParticipantItemReal(
+                    name = participant.apelidoUsuario,
+                    currentStreak = participant.sequencia ?: 0
+                )
+            }
+        } else if (competition.participantes.isEmpty()) {
+            Text(
+                text = "Nenhum participante ainda",
+                modifier = Modifier.padding(16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+fun CompetitionPodiumReal(topParticipants: List<DocumentoParticipante>) {
     val podiumColor = MaterialTheme.colorScheme.primaryContainer
     val gold = Color(0xFFD4AF37)
 
@@ -255,19 +320,17 @@ fun CompetitionPodium(topParticipants: List<Participant>) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.Bottom
     ) {
-        PodiumRank(participant = second, rank = 2, heightMultiplier = 0.8f, containerColor = podiumColor)
+        PodiumRankReal(participant = second, rank = 2, heightMultiplier = 0.8f, containerColor = podiumColor)
         Spacer(Modifier.width(8.dp))
-
-        PodiumRank(participant = first, rank = 1, heightMultiplier = 1.0f, containerColor = gold)
+        PodiumRankReal(participant = first, rank = 1, heightMultiplier = 1.0f, containerColor = gold)
         Spacer(Modifier.width(8.dp))
-
-        PodiumRank(participant = third, rank = 3, heightMultiplier = 0.6f, containerColor = podiumColor)
+        PodiumRankReal(participant = third, rank = 3, heightMultiplier = 0.6f, containerColor = podiumColor)
     }
 }
 
 @Composable
-fun RowScope.PodiumRank(
-    participant: Participant?,
+fun RowScope.PodiumRankReal(
+    participant: DocumentoParticipante?,
     rank: Int,
     heightMultiplier: Float,
     containerColor: Color
@@ -280,14 +343,6 @@ fun RowScope.PodiumRank(
         modifier = Modifier.width(width)
     ) {
         if (participant != null) {
-            if (rank == 1) {
-                Icon(
-                    Icons.Filled.EmojiEvents,
-                    contentDescription = "Primeiro Lugar",
-                    tint = Color.Black,
-                    modifier = Modifier.size(30.dp).offset(y = 10.dp)
-                )
-            }
 
             Box(
                 modifier = Modifier
@@ -297,7 +352,7 @@ fun RowScope.PodiumRank(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = participant.name.first().uppercase(),
+                    text = participant.apelidoUsuario.firstOrNull()?.uppercase() ?: "?",
                     color = MaterialTheme.colorScheme.onTertiary,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
@@ -306,12 +361,14 @@ fun RowScope.PodiumRank(
 
             Spacer(Modifier.height(4.dp))
 
-            Text(text = participant.name,
+            Text(
+                text = participant.apelidoUsuario,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold, maxLines = 1
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
             )
             Text(
-                text = "${participant.currentStreak} dias",
+                text = "${participant.sequencia ?: 0} dias",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary
             )
@@ -354,7 +411,7 @@ fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecifie
 }
 
 @Composable
-fun ParticipantItem(name: String, currentStreak: Int) {
+fun ParticipantItemReal(name: String, currentStreak: Int) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -383,29 +440,5 @@ fun ParticipantItem(name: String, currentStreak: Int) {
                 fontWeight = FontWeight.Bold
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun EachCompetitionScreenPreview() {
-    SalusTheme {
-        EachCompetitionScreen(
-            competition = Competition(
-                id = "1",
-                name = "Desafio do Pódio",
-                streak = 15,
-                durationDays = 30,
-                participants = listOf(
-                    Participant("Alice", 25),
-                    Participant("Bob", 15),
-                    Participant("Charlie", 5),
-                    Participant("Diana", 3),
-                    Participant("Eduardo", 1)
-                ),
-                competitors = emptyList(),
-                iconId = 1
-            )
-        )
     }
 }

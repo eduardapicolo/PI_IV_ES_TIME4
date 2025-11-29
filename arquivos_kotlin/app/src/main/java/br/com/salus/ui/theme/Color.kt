@@ -247,3 +247,7 @@ val onQuaternaryDarkHighContrast = Color(0xFF000000)
 val quaternaryContainerDarkHighContrast = Color(0xFFF5E390)
 val onQuaternaryContainerDarkHighContrast = Color(0xFF312A00)
 
+val ProfileGreen = Color(0xFF7FA876)
+val LogoutRed = Color(0xFFE74C3C)
+val BorderBlue = Color(0xFF0080FF)
+val TextGray = Color(0xFF666666)

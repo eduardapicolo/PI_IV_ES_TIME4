@@ -5,13 +5,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import br.com.salus.ui.theme.SalusTheme
+import androidx.lifecycle.viewmodel.compose.viewModel // Importe o ViewModel
+import br.com.salus.ui.screens.ProfileScreen // Importe a nova tela
+import br.com.salus.ui.screens.ProfileViewModel // Importe o ViewModel
+import br.com.salus.ui.theme.SalusTheme // Seu tema
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,10 +19,19 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SalusTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
+                // Inicializa o ViewModel
+                val viewModel: ProfileViewModel = viewModel()
+
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    ProfileScreen(
+                        viewModel = viewModel,
+                        onLogout = {
+                            // Lógica para deslogar e navegar para outra tela
+                            finish()
+                        }
                     )
                 }
             }
@@ -30,18 +39,4 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Bem-vindo(a) à salus!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SalusTheme {
-        Greeting("Android")
-    }
-}
+// Remova as funções Greeting e GreetingPreview se elas existirem no seu arquivo.

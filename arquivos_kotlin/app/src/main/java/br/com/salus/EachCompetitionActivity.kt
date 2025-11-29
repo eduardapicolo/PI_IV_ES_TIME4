@@ -1,18 +1,24 @@
 package br.com.salus
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
@@ -23,12 +29,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.salus.ui.theme.SalusTheme
+import kotlinx.coroutines.launch
 
 class EachCompetitionActivity : ComponentActivity() {
 
@@ -44,10 +53,10 @@ class EachCompetitionActivity : ComponentActivity() {
         val competitionId = intent.getStringExtra(EXTRA_COMPETITION_ID)
         val userId = intent.getStringExtra(EXTRA_USER_ID) ?: ""
 
-        Log.d(TAG, " onCreate - Competition ID: $competitionId, User ID: $userId")
+        Log.d(TAG, "onCreate - Competition ID: $competitionId, User ID: $userId")
 
         if (competitionId == null) {
-            Log.e(TAG, " Competition ID é NULL!")
+            Log.e(TAG, "Competition ID é NULL!")
             Toast.makeText(this, "ID da competição não fornecido", Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -61,19 +70,19 @@ class EachCompetitionActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun EachCompetitionScreen(competitionId: String, userId: String) {
     val context = LocalContext.current as? Activity
+    val scope = rememberCoroutineScope()
 
     var competition by remember { mutableStateOf<DocumentoCompeticao?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var isRefreshing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(competitionId) {
-        Log.d("EachCompetitionScreen", "🔍 Buscando competição com ID: $competitionId para User: $userId")
-        isLoading = true
-        errorMessage = null
+    suspend fun loadCompetition() {
+        Log.d("EachCompetitionScreen", "🔍 Buscando competição com ID: $competitionId")
 
         try {
             val resposta = NetworkManager.buscarCompeticoes(userId)
@@ -83,6 +92,7 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
 
                 if (competition != null) {
                     Log.d("EachCompetitionScreen", "✅ Competição encontrada: ${competition!!.nome}")
+                    errorMessage = null
                 } else {
                     Log.w("EachCompetitionScreen", "⚠️ Competição não encontrada na lista")
                     errorMessage = "Competição não encontrada"
@@ -94,10 +104,25 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
         } catch (e: Exception) {
             Log.e("EachCompetitionScreen", "❌ Erro ao buscar competição", e)
             errorMessage = "Erro: ${e.message}"
-        } finally {
-            isLoading = false
         }
     }
+
+    LaunchedEffect(competitionId) {
+        isLoading = true
+        loadCompetition()
+        isLoading = false
+    }
+
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = {
+            scope.launch {
+                isRefreshing = true
+                loadCompetition()
+                isRefreshing = false
+            }
+        }
+    )
 
     Scaffold(
         topBar = {
@@ -130,6 +155,7 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .pullRefresh(pullRefreshState)
         ) {
             when {
                 isLoading -> {
@@ -170,18 +196,26 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
                     CompetitionDetailsContent(competition = competition!!)
                 }
             }
+
+            PullRefreshIndicator(
+                refreshing = isRefreshing,
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
         }
     }
 }
 
 @Composable
 fun CompetitionDetailsContent(competition: DocumentoCompeticao) {
+    val context = LocalContext.current
+
     val sortedParticipants = remember(competition.participantes) {
         competition.participantes.sortedByDescending { it.sequencia ?: 0 }
     }
 
     val topThree = sortedParticipants.take(3)
-    val remainingParticipants = sortedParticipants.drop(3)
+    val remainingParticipants = sortedParticipants.drop(3) // 🔥 TODOS os outros
 
     Column(
         modifier = Modifier
@@ -192,7 +226,6 @@ fun CompetitionDetailsContent(competition: DocumentoCompeticao) {
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Header da competição
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
@@ -207,11 +240,11 @@ fun CompetitionDetailsContent(competition: DocumentoCompeticao) {
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = competition.nome.firstOrNull()?.uppercase() ?: "?",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    fontWeight = FontWeight.Bold
+                Image(
+                    painter = painterResource(getCompetitionIconResourceId(competition.idIcone)),
+                    contentDescription = "Ícone da competição",
+                    modifier = Modifier.size(48.dp),
+                    contentScale = ContentScale.Crop
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
@@ -264,31 +297,33 @@ fun CompetitionDetailsContent(competition: DocumentoCompeticao) {
 
         if (topThree.isNotEmpty()) {
             Text(
-                text = "Líderes da Sequência",
+                text = "🏆 Pódio",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                textAlign = TextAlign.Start
+                textAlign = TextAlign.Start,
+                fontWeight = FontWeight.Bold
             )
-            CompetitionPodiumReal(topParticipants = topThree)
+            CompetitionPodiumReal(topParticipants = topThree, context = context)
             Spacer(modifier = Modifier.height(24.dp))
         }
 
         if (remainingParticipants.isNotEmpty()) {
             Text(
-                text = "Outros Participantes",
+                text = "📋 Outros Participantes",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                textAlign = TextAlign.Start
+                textAlign = TextAlign.Start,
+                fontWeight = FontWeight.Bold
             )
 
             remainingParticipants.forEach { participant ->
                 ParticipantItemReal(
-                    name = participant.apelidoUsuario,
-                    currentStreak = participant.sequencia ?: 0
+                    participant = participant,
+                    context = context
                 )
             }
         } else if (competition.participantes.isEmpty()) {
@@ -305,7 +340,10 @@ fun CompetitionDetailsContent(competition: DocumentoCompeticao) {
 }
 
 @Composable
-fun CompetitionPodiumReal(topParticipants: List<DocumentoParticipante>) {
+fun CompetitionPodiumReal(
+    topParticipants: List<DocumentoParticipante>,
+    context: Context
+) {
     val podiumColor = MaterialTheme.colorScheme.primaryContainer
     val gold = Color(0xFFD4AF37)
 
@@ -320,11 +358,29 @@ fun CompetitionPodiumReal(topParticipants: List<DocumentoParticipante>) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.Bottom
     ) {
-        PodiumRankReal(participant = second, rank = 2, heightMultiplier = 0.8f, containerColor = podiumColor)
+        PodiumRankReal(
+            participant = second,
+            rank = 2,
+            heightMultiplier = 0.8f,
+            containerColor = podiumColor,
+            context = context
+        )
         Spacer(Modifier.width(8.dp))
-        PodiumRankReal(participant = first, rank = 1, heightMultiplier = 1.0f, containerColor = gold)
+        PodiumRankReal(
+            participant = first,
+            rank = 1,
+            heightMultiplier = 1.0f,
+            containerColor = gold,
+            context = context
+        )
         Spacer(Modifier.width(8.dp))
-        PodiumRankReal(participant = third, rank = 3, heightMultiplier = 0.6f, containerColor = podiumColor)
+        PodiumRankReal(
+            participant = third,
+            rank = 3,
+            heightMultiplier = 0.6f,
+            containerColor = podiumColor,
+            context = context
+        )
     }
 }
 
@@ -333,7 +389,8 @@ fun RowScope.PodiumRankReal(
     participant: DocumentoParticipante?,
     rank: Int,
     heightMultiplier: Float,
-    containerColor: Color
+    containerColor: Color,
+    context: Context
 ) {
     val height = 150.dp * heightMultiplier
     val width = 80.dp
@@ -343,7 +400,6 @@ fun RowScope.PodiumRankReal(
         modifier = Modifier.width(width)
     ) {
         if (participant != null) {
-
             Box(
                 modifier = Modifier
                     .size(50.dp)
@@ -351,12 +407,21 @@ fun RowScope.PodiumRankReal(
                     .background(MaterialTheme.colorScheme.tertiary),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = participant.apelidoUsuario.firstOrNull()?.uppercase() ?: "?",
-                    color = MaterialTheme.colorScheme.onTertiary,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                participant.idFotoPerfil?.let { fotoId ->
+                    Image(
+                        painter = painterResource(getProfilePictureResourceId(fotoId)),
+                        contentDescription = participant.apelidoUsuario,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } ?: run {
+                    Text(
+                        text = participant.apelidoUsuario.firstOrNull()?.uppercase() ?: "?",
+                        color = MaterialTheme.colorScheme.onTertiary,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             Spacer(Modifier.height(4.dp))
@@ -367,10 +432,25 @@ fun RowScope.PodiumRankReal(
                 fontWeight = FontWeight.Bold,
                 maxLines = 1
             )
+
+            val sequencia = participant.sequencia ?: 0
+            val plantaRes = getPlantaDrawableId(
+                context = context,
+                sequenciaCheckin = sequencia,
+                idPlantaFinal = null
+            )
+
+            Image(
+                painter = painterResource(plantaRes),
+                contentDescription = "Planta do participante",
+                modifier = Modifier.size(32.dp)
+            )
+
             Text(
-                text = "${participant.sequencia ?: 0} dias",
+                text = "$sequencia dias",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.secondary
+                color = MaterialTheme.colorScheme.secondary,
+                fontWeight = FontWeight.Bold
             )
         } else {
             Spacer(modifier = Modifier.height(54.dp))
@@ -411,13 +491,25 @@ fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecifie
 }
 
 @Composable
-fun ParticipantItemReal(name: String, currentStreak: Int) {
+fun ParticipantItemReal(
+    participant: DocumentoParticipante,
+    context: Context
+) {
+    val sequencia = participant.sequencia ?: 0
+
+    val plantaRes = getPlantaDrawableId(
+        context = context,
+        sequenciaCheckin = sequencia,
+        idPlantaFinal = null
+    )
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -427,18 +519,50 @@ fun ParticipantItemReal(name: String, currentStreak: Int) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Filled.Person,
-                    contentDescription = "Participante",
-                    modifier = Modifier.size(24.dp).padding(end = 8.dp)
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    participant.idFotoPerfil?.let { fotoId ->
+                        Image(
+                            painter = painterResource(getProfilePictureResourceId(fotoId)),
+                            contentDescription = participant.apelidoUsuario,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } ?: run {
+                        Icon(
+                            Icons.Filled.Person,
+                            contentDescription = "Participante",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    participant.apelidoUsuario,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
                 )
-                Text(name, style = MaterialTheme.typography.bodyLarge)
             }
-            Text(
-                text = "Sequência: $currentStreak dias",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold
-            )
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(plantaRes),
+                    contentDescription = "Planta",
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "$sequencia dias",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }

@@ -69,7 +69,8 @@ class PedidoDeCheckinCompeticao(val idCompeticao: String,val idUsuario : String,
 
 class PedidoDeNovaCompeticao(
     val nome: String,
-    val idCriador: String
+    val idCriador: String,
+    val idIcone: Int
 ) : Comunicado() {
     companion object {
         private const val serialVersionUID = 14L
@@ -276,7 +277,8 @@ class DocumentoParticipante(
     val idUsuario: String,
     val apelidoUsuario: String,
     val ultimoCheckin: Date?,
-    val sequencia: Int?
+    val sequencia: Int?,
+    val idFotoPerfil: Int?
 ) : Serializable {
     companion object {
         private const val serialVersionUID = 20L
@@ -288,7 +290,8 @@ class DocumentoCompeticao(
     val nome: String,
     val codigo: String,
     val idCriador: String,
-    val participantes: List<DocumentoParticipante>
+    val participantes: List<DocumentoParticipante>,
+    val idIcone: Int
 ) : Serializable {
     companion object {
         private const val serialVersionUID = 21L

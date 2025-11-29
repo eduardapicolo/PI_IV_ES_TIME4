@@ -22,7 +22,7 @@ public class Competicao {
     }
 
     private String gerarCodigoUnico() {
-        String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXXYZ0123456789";
+        String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         Random random = new Random();
         StringBuilder codigo = new StringBuilder();
 
@@ -53,6 +53,7 @@ public class Competicao {
             }
 
             String nomeUsuario = usuario.getString("apelido");
+            Integer idFotoUsuario = usuario.getInteger("idFoto", 1);
 
             String codigo;
             int tentativas = 0;
@@ -67,6 +68,7 @@ public class Competicao {
             Document criadorParticipante = new Document()
                     .append("idUsuario", pedido.getIdCriador())
                     .append("apelidoUsuario", nomeUsuario)
+                    .append("idFotoPerfil", idFotoUsuario)
                     .append("ultimoCheckin", null)
                     .append("sequenciaAtual", 0);
 
@@ -78,6 +80,7 @@ public class Competicao {
                     .append("codigo", codigo)
                     .append("dataCriacao", new Date())
                     .append("idCriador", pedido.getIdCriador())
+                    .append("idIcone", pedido.getIdIcone())
                     .append("participantes", participantes);
 
             InsertOneResult result = this.colecaoCompeticoes.insertOne(documentoCompeticao);
@@ -105,23 +108,36 @@ public class Competicao {
 
     public Resposta entrarNaCompeticao(PedidoEntrarCompeticao pedido) {
         try {
+            System.out.println("=== ENTRANDO NA COMPETIÇÃO ===");
+            System.out.println("Código recebido: '" + pedido.getCodigo() + "'");
+            System.out.println("ID do usuário: " + pedido.getIdUsuario());
+
             Document usuario = this.colecaoUsuarios.find(
                     Filters.eq("_id", new ObjectId(pedido.getIdUsuario()))
             ).first();
 
             if (usuario == null) {
+                System.out.println("❌ Usuário não encontrado");
                 return new Resposta(false, "Usuário não encontrado.");
             }
 
             String nomeUsuario = usuario.getString("apelido");
+            Integer idFotoUsuario = usuario.getInteger("idFoto", 1);
+            System.out.println("✅ Usuário encontrado: " + nomeUsuario + " (Foto ID: " + idFotoUsuario + ")");
+
+            String codigoBusca = pedido.getCodigo().trim().toUpperCase();
+            System.out.println("Buscando competição com código: '" + codigoBusca + "'");
 
             Document competicao = this.colecaoCompeticoes.find(
-                    Filters.eq("codigo", pedido.getCodigo().toUpperCase())
+                    Filters.eq("codigo", codigoBusca)
             ).first();
 
             if (competicao == null) {
+                System.out.println("❌ Competição não encontrada com código: " + codigoBusca);
                 return new Resposta(false, "Código inválido. Competição não encontrada.");
             }
+
+            System.out.println("✅ Competição encontrada: " + competicao.getString("nome"));
 
             String idCompeticao = competicao.getObjectId("_id").toHexString();
             String nomeCompeticao = competicao.getString("nome");
@@ -130,6 +146,7 @@ public class Competicao {
 
             for (Document participante : participantes) {
                 if (participante.getString("idUsuario").equals(pedido.getIdUsuario())) {
+                    System.out.println("⚠️ Usuário já está na competição");
                     return new RespostaEntrarCompeticao(
                             false,
                             "Você já está participando desta competição.",
@@ -142,6 +159,7 @@ public class Competicao {
             Document novoParticipante = new Document()
                     .append("idUsuario", pedido.getIdUsuario())
                     .append("apelidoUsuario", nomeUsuario)
+                    .append("idFotoPerfil", idFotoUsuario)
                     .append("ultimoCheckin", null)
                     .append("sequenciaAtual", 0);
 
@@ -153,6 +171,7 @@ public class Competicao {
             );
 
             if (updateResult.getModifiedCount() > 0) {
+                System.out.println("✅ Usuário adicionado à competição com sucesso!");
                 return new RespostaEntrarCompeticao(
                         true,
                         "Você entrou na competição!",
@@ -160,19 +179,21 @@ public class Competicao {
                         nomeCompeticao
                 );
             } else {
+                System.out.println("❌ Erro ao atualizar competição");
                 return new Resposta(false, "Erro ao entrar na competição.");
             }
 
         } catch (IllegalArgumentException e) {
+            System.out.println("❌ ID do usuário inválido: " + e.getMessage());
             return new Resposta(false, "ID do usuário inválido.");
         } catch (Exception e) {
+            System.err.println("❌ Exceção ao entrar na competição:");
             e.printStackTrace();
             return new Resposta(false, "Erro interno no servidor: " + e.getMessage());
         }
     }
 
-    public Resposta getCompeticoes (PedidoBuscaCompeticao pedido) {
-
+    public Resposta getCompeticoes(PedidoBuscaCompeticao pedido) {
         List<DocumentoCompeticao> listaCompeticoes = new ArrayList<>();
 
         try {
@@ -186,37 +207,69 @@ public class Competicao {
                     Document doc = cursor.next();
 
                     List<DocumentoParticipante> listaParticipantes = new ArrayList<>();
-
-                    List<Document> docsParticipantes = doc.getList("participantes",Document.class);
+                    List<Document> docsParticipantes = doc.getList("participantes", Document.class);
 
                     if (docsParticipantes != null) {
-                        for (Document docP: docsParticipantes) {
-                            String idUsarioP = docP.getString("idUsuario");
+                        for (Document docP : docsParticipantes) {
+                            String idUsuarioP = docP.getString("idUsuario");
                             String apelidoP = docP.getString("apelidoUsuario");
                             Date ultimoCheckinP = docP.getDate("ultimoCheckin");
                             Integer sequenciaP = docP.getInteger("sequenciaAtual");
 
-                            DocumentoParticipante participante = new DocumentoParticipante(idUsarioP,apelidoP,ultimoCheckinP,sequenciaP);
+                            Integer idFotoPerfilP = 1;
+
+                            try {
+                                Document usuarioAtual = this.colecaoUsuarios.find(
+                                        Filters.eq("_id", new ObjectId(idUsuarioP))
+                                ).first();
+
+                                if (usuarioAtual != null) {
+                                    idFotoPerfilP = usuarioAtual.getInteger("idFoto", 1);
+                                    System.out.println("📸 Usuário: " + apelidoP + " | ID Foto: " + idFotoPerfilP);
+                                } else {
+                                    System.out.println("⚠️ Usuário não encontrado: " + idUsuarioP);
+                                    idFotoPerfilP = docP.getInteger("idFotoPerfil", 1);
+                                }
+                            } catch (IllegalArgumentException e) {
+                                System.err.println("⚠️ ID inválido para usuário " + apelidoP + ": " + e.getMessage());
+                                idFotoPerfilP = docP.getInteger("idFotoPerfil", 1);
+                            } catch (Exception e) {
+                                System.err.println("⚠️ Erro ao buscar foto do usuário " + apelidoP + ": " + e.getMessage());
+                                idFotoPerfilP = docP.getInteger("idFotoPerfil", 1);
+                            }
+
+                            DocumentoParticipante participante = new DocumentoParticipante(
+                                    idUsuarioP,
+                                    apelidoP,
+                                    ultimoCheckinP,
+                                    sequenciaP,
+                                    idFotoPerfilP
+                            );
                             listaParticipantes.add(participante);
                         }
                     }
+
+                    Integer idIcone = doc.getInteger("idIcone", 1);
 
                     DocumentoCompeticao competicao = new DocumentoCompeticao(
                             doc.getObjectId("_id").toHexString(),
                             doc.getString("nome"),
                             doc.getString("codigo"),
                             doc.getString("idCriador"),
-                            listaParticipantes
-
+                            listaParticipantes,
+                            idIcone
                     );
 
                     listaCompeticoes.add(competicao);
                 }
 
-                return new RespostaBuscaCompeticao(true, "Busca concluída com sucesso.",listaCompeticoes);
+                System.out.println("✅ Total de competições encontradas: " + listaCompeticoes.size());
+                return new RespostaBuscaCompeticao(true, "Busca concluída com sucesso.", listaCompeticoes);
             }
         } catch (Exception e) {
-            return new RespostaBuscaCompeticao(false, "ERRO NA BUSCA: " + e.getMessage(),null);
+            System.err.println("❌ Erro na busca de competições: " + e.getMessage());
+            e.printStackTrace();
+            return new RespostaBuscaCompeticao(false, "ERRO NA BUSCA: " + e.getMessage(), null);
         }
     }
 
@@ -231,7 +284,6 @@ public class Competicao {
         Calendar cal2 = Calendar.getInstance();
         cal2.setTime(data2);
 
-        // Compara APENAS o Ano e o Dia do Ano (ex: dia 200 de 2025)
         return (cal1.get(Calendar.ERA) == cal2.get(Calendar.ERA) &&
                 cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
                 cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR));
@@ -242,7 +294,6 @@ public class Competicao {
             ObjectId idDaCompeticao;
             try {
                 idDaCompeticao = new ObjectId(pedido.getIdCompeticao());
-                System.out.println("Id da competicao recebido: " + idDaCompeticao.toHexString());
             } catch (IllegalArgumentException erro) {
                 return new RespostaDeCheckinCompeticao(false, "ID da competição em formato inválido.");
             }
@@ -270,11 +321,9 @@ public class Competicao {
                     boolean deveAtualizar = false;
 
                     if (dataNoBanco == null) {
-
                         deveAtualizar = true;
                     } else {
-
-                        if (isMesmoDia(dataNoBanco,dataDoPedido)) {
+                        if (isMesmoDia(dataNoBanco, dataDoPedido)) {
                             return new RespostaDeCheckinCompeticao(false, "Você já realizou o check-in hoje!");
                         }
 
@@ -286,7 +335,6 @@ public class Competicao {
                     }
 
                     if (deveAtualizar) {
-
                         Bson filtro = Filters.and(
                                 Filters.eq("_id", idDaCompeticao),
                                 Filters.eq("participantes.idUsuario", pedido.getIdUsuario())
@@ -300,7 +348,6 @@ public class Competicao {
                         UpdateResult result = this.colecaoCompeticoes.updateOne(filtro, updateOperation);
 
                         if (result.wasAcknowledged() && result.getModifiedCount() > 0) {
-
                             Document competicaoAtualizadaDocument = this.colecaoCompeticoes.find(
                                     Filters.eq("_id", idDaCompeticao)
                             ).first();
@@ -315,16 +362,35 @@ public class Competicao {
                                     Date ultimo = participanteDoc.getDate("ultimoCheckin");
                                     Integer seq = participanteDoc.getInteger("sequenciaAtual");
 
-                                    DocumentoParticipante documentoParticipante = new DocumentoParticipante(idUser, apelido, ultimo, seq);
+                                    // 🔥 BUSCAR FOTO ATUALIZADA também no checkin
+                                    Integer idFotoP = 1;
+                                    try {
+                                        Document usuarioAtual = this.colecaoUsuarios.find(
+                                                Filters.eq("_id", new ObjectId(idUser))
+                                        ).first();
+
+                                        if (usuarioAtual != null) {
+                                            idFotoP = usuarioAtual.getInteger("idFoto", 1);
+                                        } else {
+                                            idFotoP = participanteDoc.getInteger("idFotoPerfil", 1);
+                                        }
+                                    } catch (Exception e) {
+                                        idFotoP = participanteDoc.getInteger("idFotoPerfil", 1);
+                                    }
+
+                                    DocumentoParticipante documentoParticipante = new DocumentoParticipante(idUser, apelido, ultimo, seq, idFotoP);
                                     listaParticipantes.add(documentoParticipante);
                                 }
+
+                                Integer idIcone = competicaoAtualizadaDocument.getInteger("idIcone", 1);
 
                                 DocumentoCompeticao competicaoAtualizada = new DocumentoCompeticao(
                                         competicaoAtualizadaDocument.getObjectId("_id").toHexString(),
                                         competicaoAtualizadaDocument.getString("nome"),
                                         competicaoAtualizadaDocument.getString("codigo"),
                                         competicaoAtualizadaDocument.getString("idCriador"),
-                                        listaParticipantes
+                                        listaParticipantes,
+                                        idIcone
                                 );
 
                                 return new RespostaDeCheckinCompeticao(true, "Check-in registrado com sucesso!", competicaoAtualizada);

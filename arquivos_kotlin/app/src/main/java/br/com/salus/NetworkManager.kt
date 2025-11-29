@@ -242,10 +242,10 @@ object NetworkManager {
         }
     }
 
-    suspend fun criarCompeticao(nome: String, idCriador: String): RespostaDeNovaCompeticao {
+    suspend fun criarCompeticao(nome: String, idCriador: String, idIcone: Int): RespostaDeNovaCompeticao {
         return try {
-            Log.d(TAG, "criarCompeticao: nome=$nome, criador=$idCriador")
-            val pedido = PedidoDeNovaCompeticao(nome, idCriador)
+            Log.d(TAG, "criarCompeticao: nome=$nome, criador=$idCriador, icone=$idIcone")
+            val pedido = PedidoDeNovaCompeticao(nome, idCriador, idIcone)
             val resposta = enviarRequisicao(pedido)
 
             when (resposta) {

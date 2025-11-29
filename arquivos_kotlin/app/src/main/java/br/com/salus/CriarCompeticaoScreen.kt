@@ -1,12 +1,19 @@
 package br.com.salus
 
 import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -24,6 +31,9 @@ class CriarCompeticaoViewModel : ViewModel() {
     private val _nomeCompeticao = MutableStateFlow("")
     val nomeCompeticao: StateFlow<String> = _nomeCompeticao
 
+    private val _selectedIconId = MutableStateFlow(1)
+    val selectedIconId: StateFlow<Int> = _selectedIconId
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
@@ -38,6 +48,10 @@ class CriarCompeticaoViewModel : ViewModel() {
 
     fun atualizarNome(novoNome: String) {
         _nomeCompeticao.value = novoNome
+    }
+
+    fun atualizarIcone(novoIconeId: Int) {
+        _selectedIconId.value = novoIconeId
     }
 
     fun criarCompeticao(userId: String) {
@@ -56,13 +70,17 @@ class CriarCompeticaoViewModel : ViewModel() {
                 Log.d(TAG, "=== INÍCIO: Criar Competição ===")
                 Log.d(TAG, "Nome: ${_nomeCompeticao.value}")
                 Log.d(TAG, "UserId: $userId")
+                Log.d(TAG, "IconeId: ${_selectedIconId.value}")
 
-                // Verificar se está conectado ANTES de criar
                 if (!NetworkManager.isConectado()) {
                     Log.w(TAG, "⚠️ NÃO ESTÁ CONECTADO! Tentando conectar...")
                 }
 
-                val resposta = NetworkManager.criarCompeticao(_nomeCompeticao.value, userId)
+                val resposta = NetworkManager.criarCompeticao(
+                    _nomeCompeticao.value,
+                    userId,
+                    _selectedIconId.value
+                )
 
                 Log.d(TAG, "Resposta recebida:")
                 Log.d(TAG, "  - Sucesso: ${resposta.sucesso}")
@@ -73,7 +91,7 @@ class CriarCompeticaoViewModel : ViewModel() {
                     Log.d(TAG, "✅ Competição criada! Código: ${resposta.codigo}")
                     _mensagemSucesso.value = resposta.mensagem
                     _codigoGerado.value = resposta.codigo
-                    _nomeCompeticao.value = "" // Limpa o campo
+                    _nomeCompeticao.value = ""
                 } else {
                     Log.w(TAG, "⚠️ Falha: ${resposta.mensagem}")
                     _mensagemErro.value = resposta.mensagem
@@ -100,15 +118,14 @@ class CriarCompeticaoViewModel : ViewModel() {
 fun CriarCompeticaoScreen(
     viewModel: CriarCompeticaoViewModel = viewModel()
 ) {
-    // Credenciais de teste - mesmas da HomeScreen
     val TEST_EMAIL = "dududuefu.gomes@gmail.com"
     val TEST_SENHA = "Senhaforte123@"
 
     var userId by remember { mutableStateOf<String?>(null) }
     var loginError by remember { mutableStateOf<String?>(null) }
     var isLoggingIn by remember { mutableStateOf(true) }
+    var showIconPicker by remember { mutableStateOf(false) }
 
-    // Fazer login automaticamente ao carregar a tela
     LaunchedEffect(Unit) {
         Log.d("CriarCompeticaoScreen", "🔐 Fazendo login...")
         try {
@@ -133,10 +150,22 @@ fun CriarCompeticaoScreen(
     }
 
     val nomeCompeticao by viewModel.nomeCompeticao.collectAsState()
+    val selectedIconId by viewModel.selectedIconId.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val mensagemSucesso by viewModel.mensagemSucesso.collectAsState()
     val mensagemErro by viewModel.mensagemErro.collectAsState()
     val codigoGerado by viewModel.codigoGerado.collectAsState()
+
+    // Dialog de seleção de ícone
+    if (showIconPicker) {
+        CompetitionIconDialog(
+            onDismiss = { showIconPicker = false },
+            onPictureSelected = { id ->
+                viewModel.atualizarIcone(id)
+                showIconPicker = false
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -144,7 +173,6 @@ fun CriarCompeticaoScreen(
         }
     ) { paddingValues ->
 
-        // Tela de loading durante o login
         if (isLoggingIn) {
             Box(
                 modifier = Modifier
@@ -161,7 +189,6 @@ fun CriarCompeticaoScreen(
             return@Scaffold
         }
 
-        // Tela de erro se login falhou
         if (loginError != null) {
             Box(
                 modifier = Modifier
@@ -189,7 +216,6 @@ fun CriarCompeticaoScreen(
             return@Scaffold
         }
 
-        // Tela principal após login bem-sucedido
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -206,7 +232,31 @@ fun CriarCompeticaoScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Campo de nome
+            // Seletor de ícone
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .clickable { if (!isLoading) showIconPicker = true },
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(getCompetitionIconResourceId(selectedIconId)),
+                    contentDescription = "Ícone da competição",
+                    modifier = Modifier.size(70.dp),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            Text(
+                text = "Toque para escolher o ícone",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = nomeCompeticao,
                 onValueChange = { viewModel.atualizarNome(it) },
@@ -217,7 +267,6 @@ fun CriarCompeticaoScreen(
                 singleLine = true
             )
 
-            // Botão criar
             Button(
                 onClick = {
                     userId?.let { viewModel.criarCompeticao(it) }
@@ -235,7 +284,6 @@ fun CriarCompeticaoScreen(
                 Text(if (isLoading) "Criando..." else "Criar Competição")
             }
 
-            // Mensagem de sucesso com código
             if (codigoGerado != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -273,7 +321,6 @@ fun CriarCompeticaoScreen(
                 }
             }
 
-            // Mensagem de erro
             if (mensagemErro != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),

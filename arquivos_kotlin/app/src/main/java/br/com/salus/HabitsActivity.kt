@@ -5,9 +5,11 @@ package br.com.salus
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -87,7 +89,7 @@ fun HabitsContent(
                 Spacer(modifier = Modifier.height(100.dp))
 
                 Image(
-                    painter = painterResource(R.drawable.empty_pile),
+                    painter = painterResource(R.drawable.estagio_1),
                     contentDescription = "Vazio",
                     modifier = Modifier.width(500.dp).offset(y = (-100).dp)
                 )
@@ -132,13 +134,14 @@ fun HabitsContent(
 fun HabitoItemCard(habito: DocumentoHabito) {
     val cardBackgroundColor = Color(0xFFF7F4D9)
 
+    val context = LocalContext.current
     val diasSequencia = habito.sequenciaCheckin ?: 0
 
-    val iconRes = if (diasSequencia < 7) {
-        R.drawable.empty_pile
-    } else {
-        R.drawable.competition_icon3 
-    }
+    val imagemPlantaRes = getPlantaDrawableId(
+        context = context,
+        sequenciaCheckin = diasSequencia,
+        idPlantaFinal = habito.idFotoPlanta
+    )
 
     Card(
         modifier = Modifier
@@ -190,9 +193,9 @@ fun HabitoItemCard(habito: DocumentoHabito) {
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = iconRes),
+                    painter = painterResource(id = imagemPlantaRes),
                     contentDescription = "Status do hábito",
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(200.dp)
                 )
             }
         }
@@ -210,7 +213,10 @@ fun AddHabitDialog(
 
 
     var habitName by remember { mutableStateOf("") }
+    var selectedPlantId by remember { mutableIntStateOf(1) }
     var isLoading by remember { mutableStateOf(false) }
+
+    val opcoesDePlantas = listOf(1,2,3,4,5,6)
 
     AlertDialog(
         onDismissRequest = {
@@ -221,7 +227,7 @@ fun AddHabitDialog(
         },
         text = {
             Column {
-                Text("Qual hábito gostarias de iniciar?")
+                Text("Qual hábito você quer começar?")
                 Spacer(modifier = Modifier.height(8.dp))
 
 
@@ -232,6 +238,57 @@ fun AddHabitDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(text = "Escolha sua planta companheira:")
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp)
+                ) {
+                    items(opcoesDePlantas) { idPlanta ->
+                        val resourceId = when (idPlanta) {
+                            1 -> R.drawable.planta_final_1
+                            2 -> R.drawable.planta_final_2
+                            3 -> R.drawable.planta_final_3
+                            4 -> R.drawable.planta_final_4
+                            5 -> R.drawable.planta_final_5
+                            6 -> R.drawable.planta_final_6
+                            else -> R.drawable.planta_final_1
+                        }
+
+                        val finalResId = if (resourceId != 0) resourceId else R.drawable.planta_final_1
+
+                        val isSelected = (selectedPlantId == idPlanta)
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { selectedPlantId = idPlanta }
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    else Color.Transparent
+                                )
+                                .border(
+                                    width = if (isSelected) 2.dp else 0.dp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(8.dp)
+                        ) {
+                            Image(
+                                painter = painterResource(id = finalResId),
+                                contentDescription = "Opção de planta $idPlanta",
+                                modifier = Modifier.size(50.dp)
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -241,7 +298,7 @@ fun AddHabitDialog(
                         scope.launch {
                             isLoading = true
 
-                            val resposta = NetworkManager.newHabit(habitName, userId)
+                            val resposta = NetworkManager.newHabit(habitName, userId, selectedPlantId)
 
                             isLoading = false
 

@@ -41,7 +41,8 @@ class PedidoDeNovoHabito(
     val nome: String,
     val sequenciaCheckin: Int?,
     val ultimoCheckin: Date?,
-    val userId: String
+    val userId: String,
+    val idFotoPlanta: Int?
 ) : Comunicado() {
     companion object {
         private const val serialVersionUID = 7L
@@ -263,7 +264,8 @@ class DocumentoHabito(
     val id: String,
     val nome: String,
     val sequenciaCheckin: Int?,
-    val ultimoCheckin: Date?
+    val ultimoCheckin: Date?,
+    val idFotoPlanta: Int?
 ) : Serializable {
     companion object {
         private const val serialVersionUID = 10L

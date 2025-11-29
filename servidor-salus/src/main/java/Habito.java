@@ -28,13 +28,6 @@ public class Habito {
 
     public Resposta cadastrarHabito (PedidoDeNovoHabito pedido) {
         try {
-            Document usuario = this.colecaoUsuarios.find(
-                    Filters.eq("_id", pedido.getUserId())
-            ).first();
-            if (usuario == null) {
-                return new Resposta(false, "Usuário dono do hábito não encontrado");
-            }
-
             Document habitoExistente = this.colecaoHabitos.find(
                     Filters.and(
                             Filters.eq("nome", pedido.getNome()),
@@ -49,7 +42,8 @@ public class Habito {
             Document documentoHabito = new Document("nome", pedido.getNome())
                     .append("sequenciaCheckin", pedido.getSequenciaCheckin())
                     .append("ultimoCheckin", pedido.getUltimoCheckin())
-                    .append("idUsuario", pedido.getUserId().toString());
+                    .append("idUsuario", pedido.getUserId().toString())
+                    .append("idFotoPlanta", pedido.getIdFotoPlanta());
 
             InsertOneResult result = this.colecaoHabitos.insertOne(documentoHabito);
 
@@ -74,12 +68,14 @@ public class Habito {
                     try {
                         Number seqNum = doc.get("sequenciaCheckin", Number.class);
                         Integer sequencia = (seqNum != null) ? seqNum.intValue() : 0;
+                        Integer idFotoPlanta = doc.getInteger("idFotoPlanta", 1);
 
                         DocumentoHabito dto = new DocumentoHabito(
                                 doc.getObjectId("_id").toHexString(),
                                 doc.getString("nome"),
                                 sequencia,
-                                doc.getDate("ultimoCheckin")
+                                doc.getDate("ultimoCheckin"),
+                                idFotoPlanta
                         );
                         habitosEncontrados.add(dto);
                     } catch (Exception e_dto) {
@@ -132,6 +128,8 @@ public class Habito {
             int sequenciaAtual = (seqNum != null) ? seqNum.intValue() : 0;
             System.out.println("Sequência atual lida: " + sequenciaAtual);
 
+            Integer idFotoPlanta = habito.getInteger("idFotoPlanta", 1);
+
             // 3. Lógica da Sequência (Streak)
             LocalDate hoje = LocalDate.now(ZoneId.systemDefault());
             System.out.println("'Hoje' (LocalDate): " + hoje);
@@ -180,7 +178,8 @@ public class Habito {
                         idDoHabito.toHexString(),
                         habito.getString("nome"),
                         novaSequencia,
-                        dataDoCheckin
+                        dataDoCheckin,
+                        idFotoPlanta
                 );
                 return new RespostaDeCheckin(true, "Check-in realizado!", habitoAtualizadoDto);
             } else {

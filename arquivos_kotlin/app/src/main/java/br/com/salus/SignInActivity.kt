@@ -195,7 +195,7 @@ fun SignInScreen() {
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
                             disabledContainerColor = Color(0xFFC7DAC1),
-                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            disabledContentColor = Color.Black.copy(alpha = 0.5f)
                         )
                     ) {
                         if (isLoading) {

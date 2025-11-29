@@ -297,7 +297,7 @@ fun EmptyCompetitionsView() {
         Spacer(modifier = Modifier.height(100.dp))
 
         Image(
-            painter = painterResource(R.drawable.empty_pile),
+            painter = painterResource(R.drawable.estagio_1),
             contentDescription = "Vazio",
             modifier = Modifier
                 .width(300.dp)

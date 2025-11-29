@@ -178,14 +178,16 @@ object NetworkManager {
 
     suspend fun newHabit(
         nome: String,
-        userId: String
+        userId: String,
+        idFotoPlanta: Int
     ): Resposta {
         return try {
             val pedido = PedidoDeNovoHabito(
                 nome = nome,
                 sequenciaCheckin = 0,
                 ultimoCheckin = null,
-                userId = userId
+                userId = userId,
+                idFotoPlanta = idFotoPlanta
             )
 
             enviarRequisicao(pedido) as? Resposta

@@ -37,6 +37,26 @@ class PedidoDeLogin(
     }
 }
 
+class PedidoDeletarConta(
+    val idUsuario: String
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 106L
+    }
+}
+
+class PedidoEdicaoConta(
+    val idUsuario: String,
+    val novoApelido: String?,     // Pode ser nulo
+    val novoEmail: String?,       // Pode ser nulo
+    val novoIdFotoPerfil: Int?    // Pode ser nulo
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 105L
+    }
+}
+
+
 class PedidoDeNovoHabito(
     val nome: String,
     val sequenciaCheckin: Int?,
@@ -52,6 +72,16 @@ class PedidoDeNovoHabito(
 class PedidoListaHabitos(val userId: String) : Comunicado() {
     companion object {
         private const val serialVersionUID = 8L
+    }
+}
+
+class PedidoEdicaoHabito(
+    val idHabito: String,
+    val novoNomeHabito: String?,
+    val novoIdFotoPlanta: Int?
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 110L
     }
 }
 

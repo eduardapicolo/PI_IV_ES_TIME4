@@ -125,6 +125,56 @@ object NetworkManager {
         }
     }
 
+    suspend fun deletarConta(userId: String): Resposta {
+        return try {
+            Log.d(TAG, "deletarConta: Iniciando pedido de exclusão para o ID: $userId")
+
+            val pedido = PedidoDeletarConta(userId)
+
+            val resposta = enviarRequisicao(pedido)
+
+            val respostaFinal = resposta as? Resposta
+                ?: Resposta(false, "Resposta inesperada do servidor.")
+
+
+            if (respostaFinal.sucesso) {
+                Log.d(TAG, "deletarConta: Conta excluída com sucesso. Fechando conexão.")
+                desconectar()
+            }
+
+            respostaFinal
+        } catch (e: Exception) {
+            Log.e(TAG, "deletarConta: Erro crítico", e)
+            Resposta(false, "Erro ao deletar conta: ${e.message}")
+        }
+    }
+
+    suspend fun editarConta(
+        userId: String,
+        novoApelido: String? = null,
+        novoEmail: String? = null,
+        novoIdFotoPerfil: Int? = null
+    ): Resposta {
+        return try {
+            Log.d(TAG, "editarConta: Iniciando edição para ID: $userId")
+
+            val pedido = PedidoEdicaoConta(
+                idUsuario = userId,
+                novoApelido = novoApelido,
+                novoEmail = novoEmail,
+                novoIdFotoPerfil = novoIdFotoPerfil
+            )
+
+            val resposta = enviarRequisicao(pedido)
+
+            resposta as? Resposta ?: Resposta(false, "Resposta inesperada do servidor.")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "editarConta: Erro", e)
+            Resposta(false, "Erro ao editar conta: ${e.message}")
+        }
+    }
+
     suspend fun searchForEmail(email: String): Resposta {
         return try {
             val pedido = PedidoBuscaEmail(email)
@@ -211,6 +261,34 @@ object NetworkManager {
         } catch (e: Exception) {
             Log.e(TAG, "getHabitos: Erro", e)
             RespostaListaHabitos(false, "Erro ao buscar hábitos: ${e.message}", null)
+        }
+    }
+
+    suspend fun editarHabito(
+        habitId: String,
+        novoNome: String? = null,
+        novaFotoPlanta: Int? = null
+    ): Resposta {
+        return try {
+            Log.d(TAG, "editarHabito: Iniciando edição para Hábito ID: $habitId")
+
+            if (novoNome == null && novaFotoPlanta == null) {
+                return Resposta(false, "Nenhum dado para alterar foi fornecido.")
+            }
+
+            val pedido = PedidoEdicaoHabito(
+                idHabito = habitId,
+                novoNomeHabito = novoNome,
+                novoIdFotoPlanta = novaFotoPlanta
+            )
+
+            val resposta = enviarRequisicao(pedido)
+
+            resposta as? Resposta ?: Resposta(false, "Resposta inesperada do servidor.")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "editarHabito: Erro", e)
+            Resposta(false, "Erro ao editar hábito: ${e.message}")
         }
     }
 

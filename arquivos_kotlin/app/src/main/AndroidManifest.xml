@@ -44,13 +44,24 @@
         <activity
             android:name=".CompetitionConfigActivity"
             android:exported="false"
-            android:label="Conffigurações de Competição"
+            android:label="Configurações de Competição"
             android:theme="@style/Theme.Salus" />
         <activity
             android:name=".EachCompetitionActivity"
             android:exported="false"
             android:label="Detalhes da Competição"
             android:theme="@style/Theme.Salus" />
+        <activity
+            android:name=".EachHabitActivity"
+            android:exported="false"
+            android:label="Detalhes do Hábito"
+            android:theme="@style/Theme.Salus"/>
+
+        <activity
+            android:name=".HabitConfigActivity"
+            android:exported="false"
+            android:label="Configurações do Hábito"
+            android:theme="@style/Theme.Salus"/>
     </application>
 
 </manifest>

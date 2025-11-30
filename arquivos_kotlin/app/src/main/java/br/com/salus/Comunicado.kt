@@ -327,3 +327,13 @@ class DocumentoCompeticao(
         private const val serialVersionUID = 21L
     }
 }
+
+class PedidoEdicaoCompeticao(
+    val idCompeticao: String,
+    val novoNome: String?,
+    val novoIdIcone: Int?
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 120L
+    }
+}

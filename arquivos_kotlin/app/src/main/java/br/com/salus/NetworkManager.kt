@@ -404,4 +404,30 @@ object NetworkManager {
             RespostaDeCheckinCompeticao(false, "Erro ao fazer check-in na competição: ${e.message}", null)
         }
     }
+
+    suspend fun editarCompeticao(
+        idCompeticao: String,
+        novoNome: String? = null,
+        novoIdIcone: Int? = null
+    ): Resposta {
+        return try {
+            if (novoNome == null && novoIdIcone == null) {
+                return Resposta(false, "Nenhum dado para alterar foi fornecido.")
+            }
+
+            val pedido = PedidoEdicaoCompeticao(
+                idCompeticao = idCompeticao,
+                novoNome = novoNome,
+                novoIdIcone = novoIdIcone
+            )
+
+            val resposta = enviarRequisicao(pedido)
+
+            resposta as? Resposta ?: Resposta(false, "Resposta inesperada do servidor.")
+
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "editarCompeticao: Erro", e)
+            Resposta(false, "Erro ao editar competição: ${e.message}")
+        }
+    }
 }

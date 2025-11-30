@@ -37,6 +37,7 @@ class HabitConfigActivity : ComponentActivity() {
 
     companion object {
         const val RESULT_HABIT_DELETED = 100
+        const val RESULT_HABIT_UPDATED = 101
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +57,10 @@ class HabitConfigActivity : ComponentActivity() {
                     onDeleteClicked = {
                         setResult(RESULT_HABIT_DELETED)
                         finish()
+                    },
+                    onSaveSuccess = {
+                        setResult(RESULT_HABIT_UPDATED)
+                        finish()
                     }
                 )
             }
@@ -69,7 +74,8 @@ fun HabitConfigScreen(
     habitId: String,
     userId: String,
     onBackClicked: () -> Unit = {},
-    onDeleteClicked: () -> Unit = {}
+    onDeleteClicked: () -> Unit = {},
+    onSaveSuccess: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -77,10 +83,14 @@ fun HabitConfigScreen(
     var habit by remember { mutableStateOf<DocumentoHabito?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var nome by remember { mutableStateOf("") }
+    var nomeOriginal by remember { mutableStateOf("") }
     var selectedPlantId by remember { mutableStateOf(1) }
+    var plantaOriginalId by remember { mutableStateOf(1) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var isDeleting by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
+
+    val hasChanges = nome != nomeOriginal || selectedPlantId != plantaOriginalId
 
     LaunchedEffect(habitId) {
         try {
@@ -89,7 +99,9 @@ fun HabitConfigScreen(
                 habit = resposta.habitos!!.find { it.id == habitId }
                 habit?.let {
                     nome = it.nome
+                    nomeOriginal = it.nome
                     selectedPlantId = it.idFotoPlanta ?: 1
+                    plantaOriginalId = it.idFotoPlanta ?: 1
                 }
             }
         } catch (e: Exception) {
@@ -313,15 +325,31 @@ fun HabitConfigScreen(
                     onClick = {
                         scope.launch {
                             isSaving = true
-                            Toast.makeText(context, "Salvando alterações...", Toast.LENGTH_SHORT).show()
-                            kotlinx.coroutines.delay(1000)
-                            Toast.makeText(context, "Alterações salvas! (implementar endpoint no servidor)", Toast.LENGTH_LONG).show()
-                            isSaving = false
-                            onBackClicked()
+                            try {
+                                val novoNome = if (nome != nomeOriginal) nome else null
+                                val novaPlanta = if (selectedPlantId != plantaOriginalId) selectedPlantId else null
+
+                                val resposta = NetworkManager.editarHabito(
+                                    habitId = habitId,
+                                    novoNome = novoNome,
+                                    novaFotoPlanta = novaPlanta
+                                )
+
+                                if (resposta.sucesso) {
+                                    Toast.makeText(context, "Alterações salvas com sucesso!", Toast.LENGTH_SHORT).show()
+                                    onSaveSuccess()
+                                } else {
+                                    Toast.makeText(context, resposta.mensagem, Toast.LENGTH_LONG).show()
+                                    isSaving = false
+                                }
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Erro ao salvar: ${e.message}", Toast.LENGTH_LONG).show()
+                                isSaving = false
+                            }
                         }
                     },
                     shape = RoundedCornerShape(50),
-                    enabled = !isSaving && nome.isNotBlank(),
+                    enabled = !isSaving && nome.isNotBlank() && hasChanges,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
                     ),

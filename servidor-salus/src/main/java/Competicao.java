@@ -411,4 +411,61 @@ public class Competicao {
             return new RespostaDeCheckinCompeticao(false, "Erro interno no servidor: " + e.getMessage());
         }
     }
+
+    // Adicione este método na classe Competicao
+    public Resposta edicaoCompeticao(PedidoEdicaoCompeticao pedido) {
+
+        try {
+            ObjectId idCompeticao = new ObjectId(pedido.getIdCompeticao());
+
+            Bson filtro = Filters.eq("_id", idCompeticao);
+
+            Document competicaoAtual = this.colecaoCompeticoes.find(filtro).first();
+
+            if (competicaoAtual == null) {
+                return new Resposta(false, "Competição não encontrada.");
+            }
+
+            // Lista que armazena as atualizações que vão ser feitas no banco
+            List<Bson> atualizacoes = new ArrayList<>();
+
+            if (pedido.getNovoNome() != null && !pedido.getNovoNome().trim().isEmpty()) {
+
+                String idCriador = competicaoAtual.getString("idCriador");
+
+                // Verifica se o criador já possui outra competição com esse mesmo nome
+                long count = this.colecaoCompeticoes.countDocuments(
+                        Filters.and(
+                                Filters.eq("idCriador", idCriador), // Garante que é do mesmo dono
+                                Filters.eq("nome", pedido.getNovoNome()),
+                                Filters.ne("_id", idCompeticao) // Exclui a própria competição da busca
+                        )
+                );
+
+                if (count > 0) {
+                    return new Resposta(false, "Você já tem uma competição com este nome.");
+                }
+
+                atualizacoes.add(Updates.set("nome", pedido.getNovoNome()));
+            }
+
+            if (pedido.getNovoIdIcone() != null) {
+                atualizacoes.add(Updates.set("idIcone", pedido.getNovoIdIcone()));
+            }
+
+            if (atualizacoes.isEmpty()) {
+                return new Resposta(true, "Nada a alterar.");
+            }
+
+            this.colecaoCompeticoes.updateOne(filtro, Updates.combine(atualizacoes));
+
+            return new Resposta(true, "Competição atualizada com sucesso");
+
+        } catch (IllegalArgumentException e) {
+            return new Resposta(false, "ID da competição inválido.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Resposta(false, "Erro ao atualizar competição: " + e.getMessage());
+        }
+    }
 }

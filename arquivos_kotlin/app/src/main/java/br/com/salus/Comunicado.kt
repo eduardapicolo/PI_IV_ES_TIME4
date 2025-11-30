@@ -337,3 +337,21 @@ class PedidoEdicaoCompeticao(
         private const val serialVersionUID = 120L
     }
 }
+
+class PedidoExcluirCompeticao(
+    val idCompeticao: String,
+    val idUsuario: String
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 23L
+    }
+}
+
+class PedidoSairCompeticao(
+    val idCompeticao: String,
+    val idUsuario: String
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 24L
+    }
+}

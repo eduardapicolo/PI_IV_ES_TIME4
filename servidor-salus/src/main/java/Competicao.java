@@ -6,6 +6,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
+import com.mongodb.client.result.DeleteResult;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
@@ -412,7 +413,6 @@ public class Competicao {
         }
     }
 
-    // Adicione este método na classe Competicao
     public Resposta edicaoCompeticao(PedidoEdicaoCompeticao pedido) {
 
         try {
@@ -466,6 +466,85 @@ public class Competicao {
         } catch (Exception e) {
             e.printStackTrace();
             return new Resposta(false, "Erro ao atualizar competição: " + e.getMessage());
+        }
+    }
+
+    public Resposta excluirCompeticao(PedidoExcluirCompeticao pedido) {
+        try {
+            ObjectId idCompeticao;
+            try {
+                idCompeticao = new ObjectId(pedido.getIdCompeticao());
+            } catch (IllegalArgumentException e) {
+                return new Resposta(false, "ID da competição inválido.");
+            }
+
+            Bson filtro = Filters.and(
+                    Filters.eq("_id", idCompeticao),
+                    Filters.eq("idCriador", pedido.getIdUsuario())
+            );
+
+            DeleteResult resultado = this.colecaoCompeticoes.deleteOne(filtro);
+
+            if (resultado.getDeletedCount() > 0) {
+                return new Resposta(true, "Competição excluída com sucesso.");
+            } else {
+                return new Resposta(false, "Competição não encontrada ou você não é o dono.");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Resposta(false, "Erro ao excluir competição: " + e.getMessage());
+        }
+    }
+
+    public Resposta sairDaCompeticao(PedidoSairCompeticao pedido) {
+        try {
+            ObjectId idCompeticao;
+            try {
+                idCompeticao = new ObjectId(pedido.getIdCompeticao());
+            } catch (IllegalArgumentException e) {
+                return new Resposta(false, "ID inválido.");
+            }
+
+            Document competicao = this.colecaoCompeticoes.find(Filters.eq("_id", idCompeticao)).first();
+
+            if (competicao == null) {
+                return new Resposta(false, "Competição não encontrada.");
+            }
+
+            ArrayList<Document> participantes = (ArrayList<Document>) competicao.get("participantes");
+            boolean removeu = false;
+
+            // Percorre a lista e remove o participante
+            Iterator<Document> iterator = participantes.iterator();
+            while (iterator.hasNext()) {
+                Document participante = iterator.next();
+                if (participante.getString("idUsuario").equals(pedido.getIdUsuario())) {
+                    iterator.remove();
+                    removeu = true;
+                    break;
+                }
+            }
+
+            if (!removeu) {
+                return new Resposta(false, "Você não está nesta competição.");
+            }
+
+            // Atualiza o banco com a nova lista
+            UpdateResult result = this.colecaoCompeticoes.updateOne(
+                    Filters.eq("_id", idCompeticao),
+                    Updates.set("participantes", participantes)
+            );
+
+            if (result.getModifiedCount() > 0) {
+                return new Resposta(true, "Você saiu da competição.");
+            } else {
+                return new Resposta(false, "Erro ao atualizar dados.");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Resposta(false, "Erro interno: " + e.getMessage());
         }
     }
 }

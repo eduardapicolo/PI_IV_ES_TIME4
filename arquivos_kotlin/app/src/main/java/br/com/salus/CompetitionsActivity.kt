@@ -160,9 +160,16 @@ fun CompetitionsContent(userId: String) {
     var isRefreshing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var refreshTrigger by remember { mutableStateOf(0) }
+    var isLoadingCompetitions by remember { mutableStateOf(false) }
 
     suspend fun loadCompetitions() {
-        Log.d("CompetitionsContent", "Carregando competições para userId: $userId")
+        if (isLoadingCompetitions) {
+            Log.d("CompetitionsContent", " Já está carregando competições, ignorando nova requisição")
+            return
+        }
+
+        isLoadingCompetitions = true
+        Log.d("CompetitionsContent", " Carregando competições para userId: $userId")
 
         try {
             val resposta = NetworkManager.buscarCompeticoes(userId)
@@ -173,19 +180,21 @@ fun CompetitionsContent(userId: String) {
 
             if (resposta.sucesso && resposta.competicoes != null) {
                 competitionsList = resposta.competicoes!!
-                Log.d("CompetitionsContent", "✅ ${competitionsList.size} competições carregadas")
+                Log.d("CompetitionsContent", " ${competitionsList.size} competições carregadas")
                 errorMessage = null
             } else {
                 if (competitionsList.isEmpty()) {
                     errorMessage = resposta.mensagem
                 }
-                Log.w("CompetitionsContent", "⚠️ Falha: ${resposta.mensagem}")
+                Log.w("CompetitionsContent", "️ Falha: ${resposta.mensagem}")
             }
         } catch (e: Exception) {
             if (competitionsList.isEmpty()) {
                 errorMessage = "Erro ao carregar competições: ${e.message}"
             }
-            Log.e("CompetitionsContent", "❌ Exceção", e)
+            Log.e("CompetitionsContent", " Exceção", e)
+        } finally {
+            isLoadingCompetitions = false
         }
     }
 
@@ -267,7 +276,7 @@ fun CompetitionsContent(userId: String) {
                         }
                     },
                     onCardClick = { competitionId ->
-                        Log.d("CompetitionsContent", "🎯 Navegando para EachCompetitionActivity")
+                        Log.d("CompetitionsContent", " Navegando para EachCompetitionActivity")
                         Log.d("CompetitionsContent", "   Competition ID: $competitionId")
 
                         val intent = Intent(context, EachCompetitionActivity::class.java).apply {
@@ -294,7 +303,7 @@ fun CompetitionsListView(
     onCheckin: (DocumentoCompeticao) -> Unit,
     onCardClick: (String) -> Unit
 ) {
-    Log.d("CompetitionsListView", "📋 Renderizando ${competitions.size} competições")
+    Log.d("CompetitionsListView", " Renderizando ${competitions.size} competições")
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -307,7 +316,7 @@ fun CompetitionsListView(
                 competition = competition,
                 userId = userId,
                 onCardClick = {
-                    Log.d("CompetitionsListView", "🎯 Card clicado! Passando ID: ${competition.id}")
+                    Log.d("CompetitionsListView", " Card clicado! Passando ID: ${competition.id}")
                     onCardClick(competition.id)
                 },
                 onCheckin = { onCheckin(competition) }
@@ -318,30 +327,27 @@ fun CompetitionsListView(
 
 @Composable
 fun EmptyCompetitionsView() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Spacer(modifier = Modifier.height(100.dp))
-
-        Image(
-            painter = painterResource(R.drawable.estagio_1),
-            contentDescription = "Vazio",
-            modifier = Modifier
-                .width(300.dp)
-                .offset(y = (-50).dp)
-        )
-
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.offset(y = (-100).dp)
+            modifier = Modifier.padding(horizontal = 32.dp)
         ) {
+            Image(
+                painter = painterResource(R.drawable.estagio_1),
+                contentDescription = "Sem competições",
+                modifier = Modifier.size(200.dp)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             Text(
                 text = "Você ainda não participa de competições...",
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -349,7 +355,8 @@ fun EmptyCompetitionsView() {
             Text(
                 text = "Crie uma nova ou entre com um código!",
                 color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -361,13 +368,13 @@ suspend fun performCheckin(
     context: android.content.Context,
     onSuccess: () -> Unit
 ) {
-    Log.d("CompetitionCheckin", "Iniciando check-in: ${competition.nome}")
+    Log.d("CompetitionCheckin", " Iniciando check-in: ${competition.nome}")
 
     try {
         val resposta = NetworkManager.realizarCheckinCompeticao(competition.id, userId)
 
         if (resposta.sucesso) {
-            Log.d("CompetitionCheckin", "Check-in realizado com sucesso!")
+            Log.d("CompetitionCheckin", " Check-in realizado com sucesso!")
 
             Toast.makeText(
                 context,
@@ -377,11 +384,11 @@ suspend fun performCheckin(
 
             onSuccess()
         } else {
-            Log.w("CompetitionCheckin", "⚠️ Falha: ${resposta.mensagem}")
+            Log.w("CompetitionCheckin", " Falha: ${resposta.mensagem}")
             Toast.makeText(context, resposta.mensagem, Toast.LENGTH_SHORT).show()
         }
     } catch (e: Exception) {
-        Log.e("CompetitionCheckin", "Erro", e)
+        Log.e("CompetitionCheckin", " Erro", e)
         Toast.makeText(
             context,
             "Erro ao fazer check-in: ${e.message}",
@@ -401,16 +408,18 @@ fun CompetitionCard(
     val currentStreak = currentParticipant?.sequencia ?: 0
     val canCheckInToday = canCheckInToday(currentParticipant?.ultimoCheckin)
 
+    val cardBackgroundColor = Color(0xFFF7F4D9)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                Log.d("CompetitionCard", "🎯 Card clicado! ID: ${competition.id}")
+                Log.d("CompetitionCard", " Card clicado! ID: ${competition.id}")
                 onCardClick()
             },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = cardBackgroundColor)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -436,7 +445,8 @@ fun CompetitionCard(
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = competition.nome,
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.Black
                     )
                 }
 
@@ -447,7 +457,8 @@ fun CompetitionCard(
                     Text(
                         text = competition.codigo,
                         style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
             }
@@ -475,7 +486,7 @@ fun CompetitionCard(
                 Text(
                     text = "Último check-in: ${formatDate(ultimoCheckin)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = Color.DarkGray
                 )
             }
 
@@ -483,7 +494,8 @@ fun CompetitionCard(
 
             Text(
                 text = "Competidores: ${competition.participantes.size}",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -518,7 +530,7 @@ fun CompetitionCard(
 
                 OutlinedButton(
                     onClick = {
-                        Log.d("CompetitionCard", "📋 Botão Detalhes clicado! ID: ${competition.id}")
+                        Log.d("CompetitionCard", " Botão Detalhes clicado! ID: ${competition.id}")
                         onCardClick()
                     },
                     modifier = Modifier.weight(1f)
@@ -579,7 +591,7 @@ fun JoinCompetitionDialog(userId: String, onDismiss: () -> Unit, onSuccess: () -
                                 if (resposta.sucesso) {
                                     Toast.makeText(
                                         context,
-                                        "✅ Você entrou em '${resposta.nomeCompeticao}'!",
+                                        " Você entrou em '${resposta.nomeCompeticao}'!",
                                         Toast.LENGTH_LONG
                                     ).show()
                                     onSuccess()
@@ -673,12 +685,12 @@ fun CreateCompetitionDialog(userId: String, onDismiss: () -> Unit, onSuccess: ()
                         isCreating = true
                         scope.launch {
                             try {
-                                Log.d("CreateCompetition", "Criando competição: $name")
+                                Log.d("CreateCompetition", " Criando competição: $name")
 
                                 val resposta = NetworkManager.criarCompeticao(name, userId, selectedIconId)
 
                                 if (resposta.sucesso && resposta.codigo != null) {
-                                    Log.d("CreateCompetition", "✅ Sucesso! Código: ${resposta.codigo}")
+                                    Log.d("CreateCompetition", " Sucesso! Código: ${resposta.codigo}")
                                     Toast.makeText(
                                         context,
                                         "🎉 Competição criada! Código: ${resposta.codigo}",
@@ -686,12 +698,12 @@ fun CreateCompetitionDialog(userId: String, onDismiss: () -> Unit, onSuccess: ()
                                     ).show()
                                     onSuccess()
                                 } else {
-                                    Log.w("CreateCompetition", "⚠️ Falha: ${resposta.mensagem}")
+                                    Log.w("CreateCompetition", " Falha: ${resposta.mensagem}")
                                     Toast.makeText(context, resposta.mensagem, Toast.LENGTH_SHORT).show()
                                     isCreating = false
                                 }
                             } catch (e: Exception) {
-                                Log.e("CreateCompetition", "❌ Erro ao criar competição", e)
+                                Log.e("CreateCompetition", " Erro ao criar competição", e)
                                 Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_SHORT).show()
                                 isCreating = false
                             }

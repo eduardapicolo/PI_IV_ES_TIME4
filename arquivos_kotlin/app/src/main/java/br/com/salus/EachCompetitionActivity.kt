@@ -21,6 +21,8 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -80,6 +82,7 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
     var isLoading by remember { mutableStateOf(true) }
     var isRefreshing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showCheckinDialog by remember { mutableStateOf(false) }
 
     suspend fun loadCompetition() {
         Log.d("EachCompetitionScreen", "🔍 Buscando competição com ID: $competitionId")
@@ -124,6 +127,36 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
         }
     )
 
+    val currentParticipant = competition?.participantes?.find { it.idUsuario == userId }
+    val canCheckIn = canCheckInToday(currentParticipant?.ultimoCheckin)
+
+    if (showCheckinDialog && competition != null) {
+        CompetitionCheckinConfirmationDialog(
+            competitionName = competition!!.nome,
+            onDismiss = { showCheckinDialog = false },
+            onConfirm = {
+                showCheckinDialog = false
+                scope.launch {
+                    val resposta = NetworkManager.realizarCheckinCompeticao(competitionId, userId)
+                    if (resposta.sucesso) {
+                        Toast.makeText(
+                            context,
+                            "✅ Check-in realizado!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        loadCompetition()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            resposta.mensagem,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -149,6 +182,19 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
             )
+        },
+        floatingActionButton = {
+            if (competition != null && canCheckIn) {
+                ExtendedFloatingActionButton(
+                    onClick = { showCheckinDialog = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = "Check-in")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Fazer Check-in")
+                }
+            }
         }
     ) { paddingValues ->
         Box(
@@ -193,7 +239,11 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
                 }
 
                 competition != null -> {
-                    CompetitionDetailsContent(competition = competition!!)
+                    CompetitionDetailsContent(
+                        competition = competition!!,
+                        userId = userId,
+                        canCheckIn = canCheckIn
+                    )
                 }
             }
 
@@ -207,7 +257,80 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
 }
 
 @Composable
-fun CompetitionDetailsContent(competition: DocumentoCompeticao) {
+fun CompetitionCheckinConfirmationDialog(
+    competitionName: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(48.dp)
+            )
+        },
+        title = {
+            Text(
+                text = "Confirmar Check-in",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Você realmente cumpriu seu objetivo na competição",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "\"$competitionName\"",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "hoje?",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "🏆 Seus competidores contam com sua honestidade!",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(Icons.Default.Check, contentDescription = null)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Sim, cumpri!")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+fun CompetitionDetailsContent(
+    competition: DocumentoCompeticao,
+    userId: String,
+    canCheckIn: Boolean
+) {
     val context = LocalContext.current
 
     val sortedParticipants = remember(competition.participantes) {
@@ -215,7 +338,8 @@ fun CompetitionDetailsContent(competition: DocumentoCompeticao) {
     }
 
     val topThree = sortedParticipants.take(3)
-    val remainingParticipants = sortedParticipants.drop(3) // 🔥 TODOS os outros
+    val remainingParticipants = sortedParticipants.drop(3)
+    val currentParticipant = competition.participantes.find { it.idUsuario == userId }
 
     Column(
         modifier = Modifier
@@ -262,7 +386,39 @@ fun CompetitionDetailsContent(competition: DocumentoCompeticao) {
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        if (!canCheckIn) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "✅ Check-in de hoje já realizado!",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         Card(
             modifier = Modifier
@@ -276,6 +432,12 @@ fun CompetitionDetailsContent(competition: DocumentoCompeticao) {
                     text = "Informações",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                DetailRow(
+                    label = "Sua sequência:",
+                    value = "${currentParticipant?.sequencia ?: 0} dias",
+                    valueColor = MaterialTheme.colorScheme.primary
                 )
 
                 DetailRow(
@@ -335,7 +497,7 @@ fun CompetitionDetailsContent(competition: DocumentoCompeticao) {
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(100.dp))
     }
 }
 
@@ -486,7 +648,12 @@ fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecifie
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = label, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-        Text(text = value, style = MaterialTheme.typography.bodyLarge, color = valueColor)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (valueColor != Color.Unspecified) valueColor else MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 

@@ -57,11 +57,44 @@ class EditAccountActivity : ComponentActivity() {
 }
 
 @Composable
+fun DialogConfirmacaoExclusao(
+    onDismiss: () -> Unit, // O que fazer ao cancelar/clicar fora
+    onConfirm: () -> Unit  // O que fazer ao confirmar (Excluir)
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = {
+            Text(text = "Excluir Conta")
+        },
+        text = {
+            Text("Tem a certeza que deseja excluir a sua conta? Esta ação é irreversível e todos os seus dados serão perdidos.")
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm() }
+            ) {
+                Text("Sim, Excluir", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onDismiss() }
+            ) {
+                Text("Cancelar")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 6.dp
+    )
+}
+
+@Composable
 fun EditAccountScreen(currentUserId: String) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(true) }
     var showAvatarDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     var apelido by remember { mutableStateOf("") }
     var profilePictureId by remember { mutableIntStateOf(1) }
@@ -221,6 +254,25 @@ fun EditAccountScreen(currentUserId: String) {
 
             TextButton(
                 onClick = {
+                    showDeleteDialog = true
+                }
+            ) {
+                Text(
+                    text = "Excluir minha conta",
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+        if (showDeleteDialog) {
+            DialogConfirmacaoExclusao(
+                onDismiss = {
+                    showDeleteDialog = false
+                },
+                onConfirm = {
+                    showDeleteDialog = false
+
                     scope.launch {
                         isLoading = true
                         val resposta = NetworkManager.deletarConta(currentUserId)
@@ -234,14 +286,7 @@ fun EditAccountScreen(currentUserId: String) {
                         }
                     }
                 }
-            ) {
-                Text(
-                    text = "Excluir minha conta",
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+            )
         }
     }
 }

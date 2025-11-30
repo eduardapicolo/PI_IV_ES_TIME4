@@ -2,9 +2,16 @@ import br.com.salus.*;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.InsertOneResult;
+import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 import org.mindrot.jbcrypt.BCrypt;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Usuario {
     MongoCollection<Document> colecaoUsuarios;
@@ -96,6 +103,69 @@ public class Usuario {
             System.err.println("EXCEÇÃO no loginUsuario: " + e.getMessage());
             e.printStackTrace();
             return new Resposta(false,"Erro interno no servidor " + e.getMessage());
+        }
+    }
+
+    public Resposta edicaoContaUsuario (PedidoEdicaoConta pedido) {
+
+        try {
+
+            ObjectId idParaBuscar = new ObjectId(pedido.getIdUsuario());
+
+            Bson filtro = Filters.eq("_id", idParaBuscar);
+
+            // lista que armazena as atualizacoes que vao ser feitas no banco pois podem ser mais do que uma
+            List<Bson> atualizacoes = new ArrayList<>();
+
+            if (pedido.getNovoApelido() != null) {
+
+                long count = this.colecaoUsuarios.countDocuments(Filters.eq("apelido",pedido.getNovoApelido()));
+                if (count > 0 ){
+                    return new Resposta(false,"Apelido ja em uso");
+                }
+
+                atualizacoes.add(Updates.set("apelido", pedido.getNovoApelido()));
+            }
+
+            if (pedido.getNovoEmail() != null) {
+
+                long count = this.colecaoUsuarios.countDocuments(Filters.eq("email", pedido.getNovoEmail()));
+                if (count > 0) {
+                    return new Resposta(false, "Este novo e-mail já está em uso.");
+                }
+                atualizacoes.add(Updates.set("email", pedido.getNovoEmail()));
+            }
+
+            if (pedido.getNovoIdFotoPerfil() != null) {
+                atualizacoes.add(Updates.set("idFoto", pedido.getNovoIdFotoPerfil()));
+            }
+
+            if (atualizacoes.isEmpty()) {
+                return new Resposta(true, "Nada a alterar.");
+            }
+
+            this.colecaoUsuarios.updateOne(filtro, Updates.combine(atualizacoes));
+
+            return new Resposta(true,"Conta atualizada com sucesso");
+
+        }catch (Exception e) {
+            e.printStackTrace();
+            return new Resposta(false, "Erro ao atualizar conta:" + e.getMessage());
+        }
+    }
+
+    public Resposta deletarConta (PedidoDeletarConta pedido) {
+        try {
+
+            ObjectId idUsuario = new ObjectId(pedido.getIdUsuario());
+
+            this.colecaoUsuarios.deleteOne(Filters.eq(idUsuario));
+
+            return new Resposta(true,"Conta deletada com sucesso");
+
+        }catch (Exception e) {
+            e.printStackTrace();
+            return new Resposta(false, "Erro ao deletar conta:" + e.getMessage());
         }
     }
 }

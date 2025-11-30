@@ -8,6 +8,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
 import java.time.LocalDate;
@@ -219,6 +220,60 @@ public class Habito {
         } catch (Exception e) {
             e.printStackTrace();
             return new Resposta(false, "Erro interno ao excluir hábito: " + e.getMessage());
+        }
+    }
+
+    public Resposta edicaoHabito (PedidoEdicaoHabito pedido) {
+
+        try {
+
+            ObjectId idHabito = new ObjectId(pedido.getIdHabito());
+
+            Bson filtro = Filters.eq("_id", idHabito);
+
+            Document habitoAtual = this.colecaoHabitos.find(Filters.eq("_id", idHabito)).first();
+
+            if (habitoAtual == null) {
+                return new Resposta(false, "Hábito não encontrado.");
+            }
+
+            // lista que armazena as atualizacoes que vao ser feitas no banco pois podem ser mais do que uma
+            List<Bson> atualizacoes = new ArrayList<>();
+
+            if (pedido.getNovoNomeHabito() != null) {
+
+                String idDonoDoHabito = habitoAtual.getString("idUsuario");
+
+                long count = this.colecaoHabitos.countDocuments(
+                        Filters.and(
+                                Filters.eq("idUsuario", idDonoDoHabito),
+                                Filters.eq("nome", pedido.getNovoNomeHabito()),
+                                Filters.ne("_id", idHabito)
+                        )
+                );
+                if (count > 0 ){
+                    return new Resposta(false,"Nome de habito ja em uso");
+                }
+
+                atualizacoes.add(Updates.set("nome", pedido.getNovoNomeHabito()));
+            }
+
+            if (pedido.getNovoIdFotoPlanta() != null) {
+
+                atualizacoes.add(Updates.set("idFotoPlanta", pedido.getNovoIdFotoPlanta()));
+            }
+
+            if (atualizacoes.isEmpty()) {
+                return new Resposta(true, "Nada a alterar.");
+            }
+
+            this.colecaoHabitos.updateOne(filtro, Updates.combine(atualizacoes));
+
+            return new Resposta(true,"Habito atualizado com sucesso");
+
+        }catch (Exception e) {
+            e.printStackTrace();
+            return new Resposta(false, "Erro ao atualizar habito:" + e.getMessage());
         }
     }
 }

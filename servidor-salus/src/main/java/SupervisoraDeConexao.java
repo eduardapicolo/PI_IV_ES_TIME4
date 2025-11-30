@@ -116,13 +116,15 @@ public class SupervisoraDeConexao extends Thread
                     PedidoEntrarCompeticao pedido = (PedidoEntrarCompeticao) comunicado;
                     Resposta resposta = this.competicaoDAO.entrarNaCompeticao(pedido);
                     this.parceiro.receba(resposta);
-                }else if (comunicado instanceof PedidoBuscaCompeticao)
+                }
+                else if (comunicado instanceof PedidoBuscaCompeticao)
                 {
                     PedidoBuscaCompeticao pedido = (PedidoBuscaCompeticao) comunicado;
                     Resposta resposta = this.competicaoDAO.getCompeticoes(pedido);
                     this.parceiro.receba(resposta);
 
-                }else if (comunicado instanceof PedidoDeCheckinCompeticao){
+                }
+                else if (comunicado instanceof PedidoDeCheckinCompeticao){
                     PedidoDeCheckinCompeticao pedido = (PedidoDeCheckinCompeticao) comunicado;
                     Resposta resposta = this.competicaoDAO.realizarCheckinCompeticao(pedido);
                     this.parceiro.receba(resposta);
@@ -131,6 +133,24 @@ public class SupervisoraDeConexao extends Thread
                 {
                     PedidoExcluirHabito pedido = (PedidoExcluirHabito) comunicado;
                     Resposta resposta = this.habitoDAO.excluirHabito(pedido);
+                    this.parceiro.receba(resposta);
+                }
+                else if (comunicado instanceof PedidoEdicaoConta)
+                {
+                    PedidoEdicaoConta pedido = (PedidoEdicaoConta) comunicado;
+                    Resposta resposta = this.usuarioDAO.edicaoContaUsuario(pedido);
+                    this.parceiro.receba(resposta);
+                }
+                else if (comunicado instanceof PedidoDeletarConta)
+                {
+                    PedidoDeletarConta pedido = (PedidoDeletarConta) comunicado;
+                    Resposta resposta = this.usuarioDAO.deletarConta(pedido);
+                    this.parceiro.receba(resposta);
+                }
+                else if (comunicado instanceof PedidoEdicaoHabito)
+                {
+                    PedidoEdicaoHabito pedido = (PedidoEdicaoHabito) comunicado;
+                    Resposta resposta = this.habitoDAO.edicaoHabito(pedido);
                     this.parceiro.receba(resposta);
                 }
                 else if (comunicado instanceof PedidoParaSair)

@@ -290,6 +290,8 @@ fun HabitCard(
     val currentStreak = habit.sequenciaCheckin ?: 0
     val canCheckInToday = canCheckInToday(habit.ultimoCheckin)
 
+    var showCheckinDialog by remember { mutableStateOf(false) }
+
     val cardBackgroundColor = Color(0xFFF7F4D9)
 
     val plantaRes = getPlantaDrawableId(
@@ -297,6 +299,18 @@ fun HabitCard(
         sequenciaCheckin = currentStreak,
         idPlantaFinal = habit.idFotoPlanta
     )
+
+    // Dialog de confirmação de check-in
+    if (showCheckinDialog) {
+        HabitCheckinConfirmationDialog(
+            habitName = habit.nome,
+            onDismiss = { showCheckinDialog = false },
+            onConfirm = {
+                showCheckinDialog = false
+                onCheckin()
+            }
+        )
+    }
 
     Card(
         modifier = Modifier
@@ -356,7 +370,7 @@ fun HabitCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
-                        onClick = onCheckin,
+                        onClick = { showCheckinDialog = true },
                         enabled = canCheckInToday,
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
@@ -404,6 +418,75 @@ fun HabitCard(
             }
         }
     }
+}
+
+@Composable
+fun HabitCheckinConfirmationDialog(
+    habitName: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(48.dp)
+            )
+        },
+        title = {
+            Text(
+                text = "Confirmar Check-in",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Você realmente cumpriu o hábito",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "\"$habitName\"",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "hoje?",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "💪 Seja honesto com você mesmo!",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(Icons.Default.Check, contentDescription = null)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Sim, cumpri!")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
 
 suspend fun performHabitCheckin(

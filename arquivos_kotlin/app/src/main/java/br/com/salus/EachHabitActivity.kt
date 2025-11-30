@@ -87,9 +87,16 @@ class EachHabitActivity : ComponentActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == REQUEST_CODE_CONFIG && resultCode == RESULT_HABIT_DELETED) {
-            setResult(RESULT_HABIT_DELETED)
-            finish()
+        if (requestCode == REQUEST_CODE_CONFIG) {
+            when (resultCode) {
+                HabitConfigActivity.RESULT_HABIT_DELETED -> {
+                    setResult(RESULT_HABIT_DELETED)
+                    finish()
+                }
+                HabitConfigActivity.RESULT_HABIT_UPDATED -> {
+                    Log.d(TAG, "Hábito atualizado, recarregando dados...")
+                }
+            }
         }
     }
 }
@@ -109,9 +116,10 @@ fun EachHabitScreen(
     var isRefreshing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showCheckinDialog by remember { mutableStateOf(false) }
+    var refreshTrigger by remember { mutableStateOf(0) }
 
     suspend fun loadHabit() {
-        Log.d("EachHabitScreen", " Buscando hábito com ID: $habitId")
+        Log.d("EachHabitScreen", "🔍 Buscando hábito com ID: $habitId")
 
         try {
             val resposta = NetworkManager.getHabitos(userId)
@@ -136,10 +144,22 @@ fun EachHabitScreen(
         }
     }
 
-    LaunchedEffect(habitId) {
+    LaunchedEffect(habitId, refreshTrigger) {
         isLoading = true
         loadHabit()
         isLoading = false
+    }
+
+    DisposableEffect(Unit) {
+        val activity = context as? ComponentActivity
+
+        val listener = androidx.core.util.Consumer<Intent> { intent ->
+            refreshTrigger++
+        }
+        activity?.addOnNewIntentListener(listener)
+        onDispose {
+            activity?.removeOnNewIntentListener(listener)
+        }
     }
 
     val pullRefreshState = rememberPullRefreshState(
@@ -164,7 +184,7 @@ fun EachHabitScreen(
                     if (resposta.sucesso) {
                         Toast.makeText(
                             context,
-                            "Check-in realizado!",
+                            " Check-in realizado!",
                             Toast.LENGTH_SHORT
                         ).show()
                         loadHabit()

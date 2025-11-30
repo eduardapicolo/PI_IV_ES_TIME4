@@ -111,7 +111,7 @@ fun EachHabitScreen(
     var showCheckinDialog by remember { mutableStateOf(false) }
 
     suspend fun loadHabit() {
-        Log.d("EachHabitScreen", "🔍 Buscando hábito com ID: $habitId")
+        Log.d("EachHabitScreen", " Buscando hábito com ID: $habitId")
 
         try {
             val resposta = NetworkManager.getHabitos(userId)
@@ -120,18 +120,18 @@ fun EachHabitScreen(
                 habit = resposta.habitos!!.find { it.id == habitId }
 
                 if (habit != null) {
-                    Log.d("EachHabitScreen", "✅ Hábito encontrado: ${habit!!.nome}")
+                    Log.d("EachHabitScreen", " Hábito encontrado: ${habit!!.nome}")
                     errorMessage = null
                 } else {
-                    Log.w("EachHabitScreen", "⚠️ Hábito não encontrado na lista")
+                    Log.w("EachHabitScreen", " Hábito não encontrado na lista")
                     errorMessage = "Hábito não encontrado"
                 }
             } else {
-                Log.w("EachHabitScreen", "⚠️ Falha ao buscar hábitos: ${resposta.mensagem}")
+                Log.w("EachHabitScreen", " Falha ao buscar hábitos: ${resposta.mensagem}")
                 errorMessage = resposta.mensagem
             }
         } catch (e: Exception) {
-            Log.e("EachHabitScreen", "❌ Erro ao buscar hábito", e)
+            Log.e("EachHabitScreen", " Erro ao buscar hábito", e)
             errorMessage = "Erro: ${e.message}"
         }
     }
@@ -164,7 +164,7 @@ fun EachHabitScreen(
                     if (resposta.sucesso) {
                         Toast.makeText(
                             context,
-                            "✅ Check-in realizado!",
+                            "Check-in realizado!",
                             Toast.LENGTH_SHORT
                         ).show()
                         loadHabit()
@@ -447,7 +447,7 @@ fun HabitDetailsContent(habit: DocumentoHabito) {
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "✅ Check-in de hoje já realizado!",
+                        text = "Check-in de hoje já realizado!",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer

@@ -85,7 +85,7 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
     var showCheckinDialog by remember { mutableStateOf(false) }
 
     suspend fun loadCompetition() {
-        Log.d("EachCompetitionScreen", "🔍 Buscando competição com ID: $competitionId")
+        Log.d("EachCompetitionScreen", " Buscando competição com ID: $competitionId")
 
         try {
             val resposta = NetworkManager.buscarCompeticoes(userId)
@@ -94,18 +94,18 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
                 competition = resposta.competicoes!!.find { it.id == competitionId }
 
                 if (competition != null) {
-                    Log.d("EachCompetitionScreen", "✅ Competição encontrada: ${competition!!.nome}")
+                    Log.d("EachCompetitionScreen", " Competição encontrada: ${competition!!.nome}")
                     errorMessage = null
                 } else {
-                    Log.w("EachCompetitionScreen", "⚠️ Competição não encontrada na lista")
+                    Log.w("EachCompetitionScreen", "️ Competição não encontrada na lista")
                     errorMessage = "Competição não encontrada"
                 }
             } else {
-                Log.w("EachCompetitionScreen", "⚠️ Falha ao buscar competições: ${resposta.mensagem}")
+                Log.w("EachCompetitionScreen", " Falha ao buscar competições: ${resposta.mensagem}")
                 errorMessage = resposta.mensagem
             }
         } catch (e: Exception) {
-            Log.e("EachCompetitionScreen", "❌ Erro ao buscar competição", e)
+            Log.e("EachCompetitionScreen", " Erro ao buscar competição", e)
             errorMessage = "Erro: ${e.message}"
         }
     }
@@ -141,7 +141,7 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
                     if (resposta.sucesso) {
                         Toast.makeText(
                             context,
-                            "✅ Check-in realizado!",
+                            " Check-in realizado!",
                             Toast.LENGTH_SHORT
                         ).show()
                         loadCompetition()
@@ -299,7 +299,7 @@ fun CompetitionCheckinConfirmationDialog(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "🏆 Seus competidores contam com sua honestidade!",
+                    text = "🏆 Seus amigos contam com sua honestidade!",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary
                 )
@@ -410,7 +410,7 @@ fun CompetitionDetailsContent(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "✅ Check-in de hoje já realizado!",
+                        text = " Check-in de hoje já realizado!",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -459,7 +459,7 @@ fun CompetitionDetailsContent(
 
         if (topThree.isNotEmpty()) {
             Text(
-                text = "🏆 Pódio",
+                text = " Pódio",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -473,7 +473,7 @@ fun CompetitionDetailsContent(
 
         if (remainingParticipants.isNotEmpty()) {
             Text(
-                text = "📋 Outros Participantes",
+                text = " Outros Participantes",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .fillMaxWidth()

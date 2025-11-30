@@ -337,3 +337,27 @@ class PedidoEdicaoCompeticao(
         private const val serialVersionUID = 120L
     }
 }
+
+class PedidoBuscaUsuario(
+    val userId: String
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 500L
+    }
+}
+
+class RespostaBuscaUsuario : Resposta {
+    val documentoParticipante: DocumentoParticipante?
+
+    constructor(sucesso: Boolean, mensagem: String, documentoParticipante: DocumentoParticipante?) : super(sucesso, mensagem) {
+        this.documentoParticipante = documentoParticipante
+    }
+
+    constructor(sucesso: Boolean, mensagem: String) : super(sucesso, mensagem) {
+        this.documentoParticipante = null
+    }
+
+    companion object {
+        private const val serialVersionUID = 501L
+    }
+}

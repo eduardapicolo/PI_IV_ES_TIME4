@@ -176,16 +176,6 @@ fun CompetitionConfigScreen(
             ) {
                 Text("Salvar", color = MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextButton(onClick = onDeleteClicked) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Excluir", tint = MaterialTheme.colorScheme.error)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Excluir", color = MaterialTheme.colorScheme.error, fontSize = 16.sp)
-                }
-            }
         }
     }
 }

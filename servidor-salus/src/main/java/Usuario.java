@@ -11,6 +11,7 @@ import org.bson.types.ObjectId;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class Usuario {
@@ -32,6 +33,32 @@ public class Usuario {
             }
 
             return new Resposta(false, "Nenhum email encontrado");
+        } catch (Exception e) {
+            return new Resposta(false, "Erro interno no servido: " + e.getMessage());
+        }
+    }
+
+    public Resposta buscarUsuario (PedidoBuscaUsuario pedido) {
+        try {
+            ObjectId idParaBuscar = new ObjectId(pedido.getUserId());
+
+            Bson filtro = Filters.eq("_id", idParaBuscar);
+
+            Document documentoUsuario = this.colecaoUsuarios.find(filtro).first();
+
+            if (documentoUsuario != null) {
+                DocumentoParticipante documentoParticipante = new DocumentoParticipante(
+                        documentoUsuario.getObjectId("_id").toHexString(),
+                        documentoUsuario.getString("apelido"),
+                        new Date(),
+                        1,
+                        documentoUsuario.getInteger("idFoto")
+                );
+
+                return new RespostaBuscaUsuario(true, "Usuario encontrado", documentoParticipante);
+            }
+
+            return new Resposta(false, "Nenhum usuario encontrado");
         } catch (Exception e) {
             return new Resposta(false, "Erro interno no servido: " + e.getMessage());
         }

@@ -430,4 +430,23 @@ object NetworkManager {
             Resposta(false, "Erro ao editar competição: ${e.message}")
         }
     }
+
+    suspend fun buscarUsuario(userId: String): RespostaBuscaUsuario {
+        return try {
+            Log.d(TAG, "buscarUsuario: Buscando ID: $userId")
+
+            val pedido = PedidoBuscaUsuario(userId)
+
+            val resposta = enviarRequisicao(pedido)
+
+            when (resposta) {
+                is RespostaBuscaUsuario -> resposta
+                is Resposta -> RespostaBuscaUsuario(false, resposta.mensagem)
+                else -> RespostaBuscaUsuario(false, "Resposta inesperada do servidor.")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "buscarUsuario: Erro", e)
+            RespostaBuscaUsuario(false, "Erro ao buscar usuário: ${e.message}")
+        }
+    }
 }

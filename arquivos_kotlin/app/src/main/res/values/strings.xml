@@ -8,4 +8,5 @@
     <string name="title_activity_entrar_competicao_screen">EntrarCompeticaoScreen</string>
     <string name="title_activity_tela_teste_habito">TelaTesteHabito</string>
     <string name="title_activity_main_app_screen">MainAppScreen</string>
+    <string name="title_activity_edit_account">EditAccountActivity</string>
 </resources>

@@ -53,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -133,7 +134,8 @@ fun HomePage(currentUserId: String) {
         topBar = {
             TopBarContent(
                 title = currentTitle,
-                onInfoClick = { showTutorialDialog = true }
+                onInfoClick = { showTutorialDialog = true },
+                currentUserId = currentUserId
             )
         },
         bottomBar = { BottomBarContent(selectedScreen) { selectedScreen = it } },
@@ -164,11 +166,13 @@ fun HomePage(currentUserId: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBarContent(title: String, onInfoClick: () -> Unit) {
+fun TopBarContent(title: String, onInfoClick: () -> Unit, currentUserId: String) {
+    var context = LocalContext.current
+
     CenterAlignedTopAppBar(
         title = { Text(title, fontWeight = FontWeight.Bold) },
         navigationIcon = {
-            IconButton(onClick = { /* Ação de perfil */ }) {
+            IconButton(onClick = { mudarTelaFinish(context, EditAccountActivity::class.java, currentUserId) }) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Perfil",

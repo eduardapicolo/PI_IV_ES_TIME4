@@ -1,6 +1,8 @@
 package br.com.salus;
 
 public class PedidoEdicaoCompeticao extends Comunicado {
+    private static final long serialVersionUID = 120L;
+
     private String idCompeticao;
     private String novoNome;
     private Integer novoIdIcone;

@@ -401,6 +401,8 @@ fun CompetitionCard(
     val currentStreak = currentParticipant?.sequencia ?: 0
     val canCheckInToday = canCheckInToday(currentParticipant?.ultimoCheckin)
 
+    val cardBackgroundColor = Color(0xFFF7F4D9)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -410,7 +412,7 @@ fun CompetitionCard(
             },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = cardBackgroundColor)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -436,7 +438,8 @@ fun CompetitionCard(
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = competition.nome,
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.Black
                     )
                 }
 
@@ -447,7 +450,8 @@ fun CompetitionCard(
                     Text(
                         text = competition.codigo,
                         style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
             }
@@ -475,7 +479,7 @@ fun CompetitionCard(
                 Text(
                     text = "Último check-in: ${formatDate(ultimoCheckin)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = Color.DarkGray
                 )
             }
 
@@ -483,7 +487,8 @@ fun CompetitionCard(
 
             Text(
                 text = "Competidores: ${competition.participantes.size}",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -529,7 +534,6 @@ fun CompetitionCard(
         }
     }
 }
-
 fun canCheckInToday(ultimoCheckin: Date?): Boolean {
     if (ultimoCheckin == null) return true
 

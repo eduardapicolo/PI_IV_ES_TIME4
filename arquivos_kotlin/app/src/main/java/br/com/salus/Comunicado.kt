@@ -361,3 +361,21 @@ class RespostaBuscaUsuario : Resposta {
         private const val serialVersionUID = 501L
     }
 }
+
+class PedidoExcluirCompeticao(
+    val idCompeticao: String,
+    val idUsuario: String
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 23L
+    }
+}
+
+class PedidoSairCompeticao(
+    val idCompeticao: String,
+    val idUsuario: String
+) : Comunicado() {
+    companion object {
+        private const val serialVersionUID = 24L
+    }
+}

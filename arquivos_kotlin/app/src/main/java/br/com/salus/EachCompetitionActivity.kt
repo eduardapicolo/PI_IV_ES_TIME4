@@ -171,6 +171,11 @@ fun EachCompetitionScreen(competitionId: String, userId: String) {
                         IconButton(onClick = {
                             val intent = Intent(context, CompetitionConfigActivity::class.java).apply {
                                 putExtra("COMPETITION_ID", competitionId)
+                                putExtra("USER_ID", userId)
+                                putExtra("IS_CREATOR", competition!!.idCriador == userId)
+
+                                putExtra("NOME_COMPETICAO", competition!!.nome)
+                                putExtra("ICONE_COMPETICAO", competition!!.idIcone)
                             }
                             context?.startActivity(intent)
                         }) {

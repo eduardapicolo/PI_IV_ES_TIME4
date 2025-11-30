@@ -449,4 +449,26 @@ object NetworkManager {
             RespostaBuscaUsuario(false, "Erro ao buscar usuário: ${e.message}")
         }
     }
+
+    suspend fun excluirCompeticao(idCompeticao: String, idUsuario: String): Resposta {
+        return try {
+            val pedido = PedidoExcluirCompeticao(idCompeticao, idUsuario)
+            val resposta = enviarRequisicao(pedido)
+            resposta as? Resposta ?: Resposta(false, "Resposta inesperada.")
+        } catch (e: Exception) {
+            Log.e(TAG, "excluirCompeticao: Erro", e)
+            Resposta(false, "Erro ao excluir competição: ${e.message}")
+        }
+    }
+
+    suspend fun sairDaCompeticao(idCompeticao: String, idUsuario: String): Resposta {
+        return try {
+            val pedido = PedidoSairCompeticao(idCompeticao, idUsuario)
+            val resposta = enviarRequisicao(pedido)
+            resposta as? Resposta ?: Resposta(false, "Resposta inesperada.")
+        } catch (e: Exception) {
+            Log.e(TAG, "sairDaCompeticao: Erro", e)
+            Resposta(false, "Erro ao sair da competição: ${e.message}")
+        }
+    }
 }

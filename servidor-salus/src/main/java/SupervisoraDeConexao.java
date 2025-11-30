@@ -169,6 +169,28 @@ public class SupervisoraDeConexao extends Thread
                 {
                     break;
                 }
+                else if (comunicado instanceof PedidoEdicaoCompeticao)
+                {
+                    PedidoEdicaoCompeticao pedido = (PedidoEdicaoCompeticao) comunicado;
+                    Resposta resposta = this.competicaoDAO.edicaoCompeticao(pedido);
+                    this.parceiro.receba(resposta);
+                }
+                else if (comunicado instanceof PedidoExcluirCompeticao)
+                {
+                    PedidoExcluirCompeticao pedido = (PedidoExcluirCompeticao) comunicado;
+                    Resposta resposta = this.competicaoDAO.excluirCompeticao(pedido);
+                    this.parceiro.receba(resposta);
+                }
+                else if (comunicado instanceof PedidoSairCompeticao)
+                {
+                    PedidoSairCompeticao pedido = (PedidoSairCompeticao) comunicado;
+                    Resposta resposta = this.competicaoDAO.sairDaCompeticao(pedido);
+                    this.parceiro.receba(resposta);
+                }
+                else if (comunicado instanceof PedidoParaSair)
+                {
+                    break;
+                }
             }
             catch (Exception erro)
             {

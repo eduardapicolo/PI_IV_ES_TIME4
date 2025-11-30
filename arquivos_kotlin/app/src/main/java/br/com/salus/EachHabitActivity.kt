@@ -15,15 +15,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,6 +52,8 @@ class EachHabitActivity : ComponentActivity() {
         private const val TAG = "EachHabitActivity"
     }
 
+    private var shouldRefresh = mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -72,6 +74,7 @@ class EachHabitActivity : ComponentActivity() {
                 EachHabitScreen(
                     habitId = habitId,
                     userId = userId,
+                    shouldRefresh = shouldRefresh,
                     onNavigateToConfig = {
                         val intent = Intent(this, HabitConfigActivity::class.java).apply {
                             putExtra("HABIT_ID", habitId)
@@ -94,7 +97,9 @@ class EachHabitActivity : ComponentActivity() {
                     finish()
                 }
                 HabitConfigActivity.RESULT_HABIT_UPDATED -> {
-                    Log.d(TAG, "Hábito atualizado, recarregando dados...")
+                    Log.d(TAG, "Hábito atualizado, voltando para a lista...")
+                    // Fecha a tela de detalhes e volta para MainAppScreen
+                    finish()
                 }
             }
         }
@@ -106,6 +111,7 @@ class EachHabitActivity : ComponentActivity() {
 fun EachHabitScreen(
     habitId: String,
     userId: String,
+    shouldRefresh: MutableState<Boolean>,
     onNavigateToConfig: () -> Unit
 ) {
     val context = LocalContext.current as? Activity
@@ -128,38 +134,26 @@ fun EachHabitScreen(
                 habit = resposta.habitos!!.find { it.id == habitId }
 
                 if (habit != null) {
-                    Log.d("EachHabitScreen", " Hábito encontrado: ${habit!!.nome}")
+                    Log.d("EachHabitScreen", "✅ Hábito encontrado: ${habit!!.nome}")
                     errorMessage = null
                 } else {
-                    Log.w("EachHabitScreen", " Hábito não encontrado na lista")
+                    Log.w("EachHabitScreen", "⚠️ Hábito não encontrado na lista")
                     errorMessage = "Hábito não encontrado"
                 }
             } else {
-                Log.w("EachHabitScreen", " Falha ao buscar hábitos: ${resposta.mensagem}")
+                Log.w("EachHabitScreen", "⚠️ Falha ao buscar hábitos: ${resposta.mensagem}")
                 errorMessage = resposta.mensagem
             }
         } catch (e: Exception) {
-            Log.e("EachHabitScreen", " Erro ao buscar hábito", e)
+            Log.e("EachHabitScreen", "❌ Erro ao buscar hábito", e)
             errorMessage = "Erro: ${e.message}"
         }
     }
 
-    LaunchedEffect(habitId, refreshTrigger) {
+    LaunchedEffect(habitId, refreshTrigger, shouldRefresh.value) {
         isLoading = true
         loadHabit()
         isLoading = false
-    }
-
-    DisposableEffect(Unit) {
-        val activity = context as? ComponentActivity
-
-        val listener = androidx.core.util.Consumer<Intent> { intent ->
-            refreshTrigger++
-        }
-        activity?.addOnNewIntentListener(listener)
-        onDispose {
-            activity?.removeOnNewIntentListener(listener)
-        }
     }
 
     val pullRefreshState = rememberPullRefreshState(
@@ -184,7 +178,7 @@ fun EachHabitScreen(
                     if (resposta.sucesso) {
                         Toast.makeText(
                             context,
-                            " Check-in realizado!",
+                            "✅ Check-in realizado!",
                             Toast.LENGTH_SHORT
                         ).show()
                         loadHabit()

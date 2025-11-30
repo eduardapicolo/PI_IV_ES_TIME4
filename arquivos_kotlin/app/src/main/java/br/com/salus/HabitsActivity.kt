@@ -500,7 +500,7 @@ suspend fun performHabitCheckin(
         val resposta = NetworkManager.realizarCheckin(habit.id)
 
         if (resposta.sucesso) {
-            Log.d("HabitCheckin", "✅ Check-in realizado com sucesso!")
+            Log.d("HabitCheckin", " Check-in realizado com sucesso!")
 
             Toast.makeText(
                 context,
@@ -510,11 +510,11 @@ suspend fun performHabitCheckin(
 
             onSuccess()
         } else {
-            Log.w("HabitCheckin", "⚠️ Falha: ${resposta.mensagem}")
+            Log.w("HabitCheckin", " Falha: ${resposta.mensagem}")
             Toast.makeText(context, resposta.mensagem, Toast.LENGTH_SHORT).show()
         }
     } catch (e: Exception) {
-        Log.e("HabitCheckin", "❌ Erro", e)
+        Log.e("HabitCheckin", " Erro", e)
         Toast.makeText(
             context,
             "Erro ao fazer check-in: ${e.message}",

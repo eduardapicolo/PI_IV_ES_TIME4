@@ -323,7 +323,8 @@ fun TutorialDialog(onDismiss: () -> Unit) {
 
                 TutorialTip(
                     icon = "🌿",
-                    text = "Sua planta cresce conforme sua sequência: 0-2 dias (semente), 3-5 (broto), 6-10 (muda), até 30+ dias (planta completa)."
+                    text = "Sua planta cresce conforme sua sequência: 0-2 dias (semente), 3-5 (broto), 6-10 (muda pequena), 11-15(muda média), 16-20(planta jovem)," +
+                            " 21-30(planta crescida),  30+(planta completa)."
                 )
 
                 TutorialTip(

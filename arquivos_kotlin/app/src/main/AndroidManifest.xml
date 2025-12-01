@@ -2,9 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -14,7 +13,18 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Salus">
+        android:theme="@style/Theme.Salus"
+        android:usesCleartextTraffic="true">
+        <activity
+            android:name=".EditAccountActivity"
+            android:exported="false"
+            android:label="@string/title_activity_edit_account"
+            android:theme="@style/Theme.Salus" />
+        <activity
+            android:name=".MainAppScreen"
+            android:exported="false"
+            android:label="@string/title_activity_main_app_screen"
+            android:theme="@style/Theme.Salus" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -26,6 +36,36 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".SignInActivity"
+            android:exported="false"
+            android:label="Entrar"
+            android:theme="@style/Theme.Salus" />
+        <activity
+            android:name=".SignUpActivity"
+            android:exported="false"
+            android:label="Cadastrar"
+            android:theme="@style/Theme.Salus" />
+        <activity
+            android:name=".CompetitionConfigActivity"
+            android:exported="false"
+            android:label="Configurações de Competição"
+            android:theme="@style/Theme.Salus" />
+        <activity
+            android:name=".EachCompetitionActivity"
+            android:exported="false"
+            android:label="Detalhes da Competição"
+            android:theme="@style/Theme.Salus" />
+        <activity
+            android:name=".EachHabitActivity"
+            android:exported="false"
+            android:label="Detalhes do Hábito"
+            android:theme="@style/Theme.Salus" />
+        <activity
+            android:name=".HabitConfigActivity"
+            android:exported="false"
+            android:label="Configurações do Hábito"
+            android:theme="@style/Theme.Salus" />
     </application>
 
 </manifest>

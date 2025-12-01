@@ -98,7 +98,6 @@ class EachHabitActivity : ComponentActivity() {
                 }
                 HabitConfigActivity.RESULT_HABIT_UPDATED -> {
                     Log.d(TAG, "Hábito atualizado, voltando para a lista...")
-                    // Fecha a tela de detalhes e volta para MainAppScreen
                     finish()
                 }
             }

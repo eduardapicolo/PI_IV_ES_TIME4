@@ -22,14 +22,17 @@ object NetworkManager {
         withContext(Dispatchers.IO) {
             if (!isConectado()){
                 try {
+                    Log.d(TAG, "🔌 Tentando conectar ao servidor $HOST:$PORTA...")
                     cliente = ClienteSocket(HOST, PORTA)
                     cliente?.conectar()
-                    Log.d(TAG, "Conectado ao servidor")
+                    Log.d(TAG, " Conectado ao servidor com sucesso!")
                 } catch (e: Exception) {
-                    Log.e(TAG, "Erro ao conectar ao servidor", e)
+                    Log.e(TAG, " Erro ao conectar ao servidor: ${e.message}", e)
                     cliente = null
                     throw e
                 }
+            } else {
+                Log.d(TAG, "✓ Já está conectado ao servidor")
             }
         }
     }
@@ -50,26 +53,36 @@ object NetworkManager {
     private suspend fun <T : Comunicado> enviarRequisicao(pedido: T): Comunicado {
         return withContext(Dispatchers.IO) {
             if (!isConectado()) {
-                Log.e(TAG, "Requisição falhou: Não conectado.")
+                Log.w(TAG, " Não conectado. Tentando conectar antes de enviar...")
+                try {
+                    conectar()
+                } catch (e: Exception) {
+                    Log.e(TAG, " Falha ao conectar: ${e.message}")
+                    return@withContext Resposta(false, "Não foi possível conectar ao servidor: ${e.message}")
+                }
+            }
+
+            if (!isConectado()) {
+                Log.e(TAG, " Ainda não conectado após tentativa de conexão")
                 return@withContext Resposta(false, "Sem conexão com o servidor.")
             }
 
             try {
-                Log.d(TAG, "Enviando pedido: ${pedido::class.simpleName}")
+                Log.d(TAG, " Enviando pedido: ${pedido::class.simpleName}")
                 cliente!!.enviar(pedido)
-                Log.d(TAG, "Aguardando resposta...")
+                Log.d(TAG, " Aguardando resposta...")
                 val resposta = cliente!!.receber()
-                Log.d(TAG, "Resposta recebida: ${resposta::class.simpleName}")
+                Log.d(TAG, " Resposta recebida: ${resposta::class.simpleName}")
                 return@withContext resposta
 
             } catch (e: SocketException) {
-                Log.e(TAG, "ERRO (SocketException): Conexão perdida: ${e.message}", e)
+                Log.e(TAG, " ERRO (SocketException): Conexão perdida: ${e.message}", e)
                 desconectar()
                 return@withContext Resposta(false, "Conexão com o servidor foi perdida: ${e.message}")
 
             } catch (e: Exception) {
                 val msgErro = e.message ?: "Exceção desconhecida"
-                Log.e(TAG, "ERRO (Exception) na requisição: $msgErro", e)
+                Log.e(TAG, " ERRO (Exception) na requisição: $msgErro", e)
                 e.printStackTrace()
                 return@withContext Resposta(false, "Erro de rede: $msgErro")
             }
@@ -81,13 +94,15 @@ object NetworkManager {
         senha: String
     ): RespostaDeLogin {
         return try {
+            Log.d(TAG, " userSignIn: Iniciando login para: $email")
             conectar()
+
             if (!isConectado()) {
                 Log.e(TAG, "userSignIn: Não foi possível conectar")
                 return RespostaDeLogin(false, "Não foi possível conectar ao servidor.", null)
             }
 
-            Log.d(TAG, "userSignIn: Enviando pedido de login para: $email")
+            Log.d(TAG, "userSignIn: Enviando pedido de login")
             val pedido = PedidoDeLogin(email, senha)
             val resposta = enviarRequisicao(pedido)
 
@@ -112,7 +127,7 @@ object NetworkManager {
                 Log.w(TAG, "userSignIn: Login falhou, desconectando")
                 desconectar()
             } else {
-                Log.d(TAG, "userSignIn: Login bem-sucedido!")
+                Log.d(TAG, "userSignIn: Login bem-sucedido! Mantendo conexão ativa.")
             }
 
             respostaLogin
@@ -130,12 +145,10 @@ object NetworkManager {
             Log.d(TAG, "deletarConta: Iniciando pedido de exclusão para o ID: $userId")
 
             val pedido = PedidoDeletarConta(userId)
-
             val resposta = enviarRequisicao(pedido)
 
             val respostaFinal = resposta as? Resposta
                 ?: Resposta(false, "Resposta inesperada do servidor.")
-
 
             if (respostaFinal.sucesso) {
                 Log.d(TAG, "deletarConta: Conta excluída com sucesso. Fechando conexão.")
@@ -166,7 +179,6 @@ object NetworkManager {
             )
 
             val resposta = enviarRequisicao(pedido)
-
             resposta as? Resposta ?: Resposta(false, "Resposta inesperada do servidor.")
 
         } catch (e: Exception) {
@@ -177,6 +189,7 @@ object NetworkManager {
 
     suspend fun searchForEmail(email: String): Resposta {
         return try {
+            conectar()
             val pedido = PedidoBuscaEmail(email)
             val resposta = enviarRequisicao(pedido)
             resposta as? Resposta ?: Resposta(false, "Resposta inesperada.")
@@ -283,7 +296,6 @@ object NetworkManager {
             )
 
             val resposta = enviarRequisicao(pedido)
-
             resposta as? Resposta ?: Resposta(false, "Resposta inesperada do servidor.")
 
         } catch (e: Exception) {
@@ -296,7 +308,6 @@ object NetworkManager {
         return try {
             val pedido = PedidoExcluirHabito(habitId, userId)
             val resposta = enviarRequisicao(pedido)
-
             resposta as? Resposta ?: Resposta(false, "Resposta inesperada.")
         } catch (e: Exception) {
             Log.e(TAG, "excluirHabito: Erro", e)
@@ -322,26 +333,38 @@ object NetworkManager {
 
     suspend fun criarCompeticao(nome: String, idCriador: String, idIcone: Int): RespostaDeNovaCompeticao {
         return try {
-            Log.d(TAG, "criarCompeticao: nome=$nome, criador=$idCriador, icone=$idIcone")
+            Log.d(TAG, " criarCompeticao: nome=$nome, criador=$idCriador, icone=$idIcone")
+
+            // IMPORTANTE: Garante que está conectado antes de criar competição
+            if (!isConectado()) {
+                Log.w(TAG, "️ Não conectado! Tentando conectar...")
+                try {
+                    conectar()
+                } catch (e: Exception) {
+                    Log.e(TAG, " Falha ao conectar: ${e.message}")
+                    return RespostaDeNovaCompeticao(false, "Não foi possível conectar ao servidor: ${e.message}", null, null)
+                }
+            }
+
             val pedido = PedidoDeNovaCompeticao(nome, idCriador, idIcone)
             val resposta = enviarRequisicao(pedido)
 
             when (resposta) {
                 is RespostaDeNovaCompeticao -> {
-                    Log.d(TAG, "Competição criada! Código: ${resposta.codigo}")
+                    Log.d(TAG, " Competição criada! Código: ${resposta.codigo}")
                     resposta
                 }
                 is Resposta -> {
-                    Log.w(TAG, "Resposta genérica: ${resposta.mensagem}")
+                    Log.w(TAG, " Resposta genérica: ${resposta.mensagem}")
                     RespostaDeNovaCompeticao(false, resposta.mensagem, null, null)
                 }
                 else -> {
-                    Log.e(TAG, "Resposta inesperada")
+                    Log.e(TAG, " Resposta inesperada")
                     RespostaDeNovaCompeticao(false, "Resposta inesperada.", null, null)
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "criarCompeticao: Erro", e)
+            Log.e(TAG, " criarCompeticao: Erro", e)
             RespostaDeNovaCompeticao(false, "Erro ao criar competição: ${e.message}", null, null)
         }
     }
@@ -388,9 +411,24 @@ object NetworkManager {
         }
     }
 
+    suspend fun buscarUsuario(userId: String): RespostaBuscaUsuario {
+        return try {
+            val pedido = PedidoBuscaUsuario(userId)
+            val resposta = enviarRequisicao(pedido)
+
+            when (resposta) {
+                is RespostaBuscaUsuario -> resposta
+                is Resposta -> RespostaBuscaUsuario(false, resposta.mensagem, null)
+                else -> RespostaBuscaUsuario(false, "Resposta inesperada.", null)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "buscarUsuario: Erro", e)
+            RespostaBuscaUsuario(false, "Erro ao buscar usuário: ${e.message}", null)
+        }
+    }
+
     suspend fun realizarCheckinCompeticao(idCompeticao: String, idUsuario: String): RespostaDeCheckinCompeticao {
         return try {
-            // Usamos Date() para pegar a data atual do celular
             val pedido = PedidoDeCheckinCompeticao(idCompeticao, idUsuario, Date())
             val resposta = enviarRequisicao(pedido)
 
@@ -422,31 +460,11 @@ object NetworkManager {
             )
 
             val resposta = enviarRequisicao(pedido)
-
             resposta as? Resposta ?: Resposta(false, "Resposta inesperada do servidor.")
 
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "editarCompeticao: Erro", e)
+            Log.e(TAG, "editarCompeticao: Erro", e)
             Resposta(false, "Erro ao editar competição: ${e.message}")
-        }
-    }
-
-    suspend fun buscarUsuario(userId: String): RespostaBuscaUsuario {
-        return try {
-            Log.d(TAG, "buscarUsuario: Buscando ID: $userId")
-
-            val pedido = PedidoBuscaUsuario(userId)
-
-            val resposta = enviarRequisicao(pedido)
-
-            when (resposta) {
-                is RespostaBuscaUsuario -> resposta
-                is Resposta -> RespostaBuscaUsuario(false, resposta.mensagem)
-                else -> RespostaBuscaUsuario(false, "Resposta inesperada do servidor.")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "buscarUsuario: Erro", e)
-            RespostaBuscaUsuario(false, "Erro ao buscar usuário: ${e.message}")
         }
     }
 

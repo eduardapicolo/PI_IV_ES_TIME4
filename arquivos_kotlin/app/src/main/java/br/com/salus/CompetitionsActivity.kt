@@ -752,7 +752,7 @@ fun CreateCompetitionDialog(userId: String, onDismiss: () -> Unit, onSuccess: ()
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Nome da Competição") },
-                    placeholder = { Text("Ex: Desafio 30 Dias") },
+                    placeholder = { Text("Ex: Meditação") },
                     singleLine = true,
                     enabled = !isCreating,
                     modifier = Modifier.fillMaxWidth()

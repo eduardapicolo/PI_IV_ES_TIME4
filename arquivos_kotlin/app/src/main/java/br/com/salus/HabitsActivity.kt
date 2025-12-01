@@ -300,7 +300,6 @@ fun HabitCard(
         idPlantaFinal = habit.idFotoPlanta
     )
 
-    // Dialog de confirmação de check-in
     if (showCheckinDialog) {
         HabitCheckinConfirmationDialog(
             habitName = habit.nome,

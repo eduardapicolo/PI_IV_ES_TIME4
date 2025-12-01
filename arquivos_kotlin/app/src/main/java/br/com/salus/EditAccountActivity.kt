@@ -97,6 +97,7 @@ fun EditAccountScreen(currentUserId: String) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     var apelido by remember { mutableStateOf("") }
+    var apelidoBanco by remember { mutableStateOf("") }
     var profilePictureId by remember { mutableIntStateOf(1) }
 
     LaunchedEffect(currentUserId) {
@@ -104,6 +105,7 @@ fun EditAccountScreen(currentUserId: String) {
             val resposta = NetworkManager.buscarUsuario(currentUserId)
             if (resposta.sucesso && resposta.documentoParticipante != null) {
                 apelido = resposta.documentoParticipante.apelidoUsuario
+                apelidoBanco = resposta.documentoParticipante.apelidoUsuario
                 profilePictureId = resposta.documentoParticipante.idFotoPerfil ?: 1
             } else {
                 Log.d("TESTEEDITAR", currentUserId)
@@ -217,19 +219,36 @@ fun EditAccountScreen(currentUserId: String) {
                     scope.launch {
                         isLoading = true
 
-                        val resposta = NetworkManager.editarConta(
-                            userId = currentUserId,
-                            novoApelido = apelido,
-                            novoIdFotoPerfil = profilePictureId
-                        )
+                        if (apelido == apelidoBanco) {
+                            val resposta = NetworkManager.editarConta(
+                                userId = currentUserId,
+                                novoApelido = null,
+                                novoIdFotoPerfil = profilePictureId
+                            )
 
-                        isLoading = false
+                            isLoading = false
 
-                        if (resposta.sucesso) {
-                            Toast.makeText(context, "Perfil atualizado!", Toast.LENGTH_SHORT).show()
-                            mudarTelaFinish(context, MainAppScreen::class.java, currentUserId)
+                            if (resposta.sucesso) {
+                                Toast.makeText(context, "Perfil atualizado!", Toast.LENGTH_SHORT).show()
+                                mudarTelaFinish(context, MainAppScreen::class.java, currentUserId)
+                            } else {
+                                Toast.makeText(context, "Erro: ${resposta.mensagem}", Toast.LENGTH_LONG).show()
+                            }
                         } else {
-                            Toast.makeText(context, "Erro: ${resposta.mensagem}", Toast.LENGTH_LONG).show()
+                            val resposta = NetworkManager.editarConta(
+                                userId = currentUserId,
+                                novoApelido = apelido,
+                                novoIdFotoPerfil = profilePictureId
+                            )
+
+                            isLoading = false
+
+                            if (resposta.sucesso) {
+                                Toast.makeText(context, "Perfil atualizado!", Toast.LENGTH_SHORT).show()
+                                mudarTelaFinish(context, MainAppScreen::class.java, currentUserId)
+                            } else {
+                                Toast.makeText(context, "Erro: ${resposta.mensagem}", Toast.LENGTH_LONG).show()
+                            }
                         }
                     }
                 },
